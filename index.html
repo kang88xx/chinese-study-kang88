@@ -31,30 +31,21 @@
 <main>
   <!-- ===== 대시보드 ===== -->
   <section id="view-home" class="view">
-    <div class="hero">
-      <div class="hero-left">
+    <div class="hero-band">
+      <div class="hero-band-text">
         <p class="eyebrow">맛있는 비즈니스 중국어 LEVEL 4 · 쟌슈위 강사 · 매일 10:50–11:00</p>
-        <h1><span class="hanzi accent">每天十分钟</span>，<br>매일 10분의 기록</h1>
-        <p class="hero-desc">중국교육센터 일일강사평 메일을 자동 수집해 쌓아 가는 학습 아카이브.
-        2026-04-07 개강부터 지금까지의 모든 수업이 담겨 있습니다.</p>
-      </div>
-      <div class="hero-right">
-        <div class="progress-card">
-          <div class="progress-top">
-            <span class="label">전체 진도</span>
-            <span class="pnum"><strong id="p-done"></strong> / <span id="p-total"></span>회</span>
-          </div>
-          <div class="bar"><span id="p-bar"></span></div>
-          <div class="progress-foot">
-            <span id="p-pct"></span>
-            <span id="p-period"></span>
-          </div>
-        </div>
-        <div class="stats" id="stats"></div>
+        <h1><span class="hanzi accent">每天十分钟</span>, 매일 10분의 기록</h1>
+        <p class="hero-desc">중국교육센터 일일강사평을 자동 수집해 쌓아 가는 학습 아카이브. 2026-04-07 개강부터 지금까지의 모든 수업이 담겨 있습니다.</p>
+        <p class="hero-period" id="p-period"></p>
       </div>
     </div>
 
-    <h2><span class="stamp hanzi">出席</span>출석 달력 <span class="src-tag">공식 출석부 기준</span></h2>
+    <div class="bento" id="bento"></div>
+
+    <div class="section-head">
+      <h2><span class="stamp hanzi">出席</span>출석 달력</h2>
+      <span class="src-tag">공식 출석부 기준</span>
+    </div>
     <div class="cal-grid" id="cals"></div>
     <div class="legend">
       <span class="l-att"><i></i>출석 (숫자는 누적 회차)</span>
@@ -68,30 +59,41 @@
 
   <!-- ===== 수업 기록 ===== -->
   <section id="view-lessons" class="view" hidden>
-    <p class="note">강사평(일일 메일)에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일(대시보드 달력)과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
-    <div class="toolbar">
-      <div class="chips" id="month-chips"></div>
-      <input type="search" id="lesson-search" placeholder="문장·단어·주제 검색 (예: 把, 감기, 摸鱼)" autocomplete="off">
+    <div class="lessons-layout">
+      <aside class="lessons-side">
+        <div class="side-panel">
+          <input type="search" id="lesson-search" placeholder="문장·단어·주제 검색" autocomplete="off">
+          <div class="chips vertical" id="month-chips"></div>
+          <div class="side-stats" id="side-stats"></div>
+        </div>
+      </aside>
+      <div class="lessons-main">
+        <p class="note">강사평(일일 메일)에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일(대시보드 달력)과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
+        <p class="result-count" id="lesson-count"></p>
+        <div id="lesson-list" class="lesson-list"></div>
+      </div>
     </div>
-    <p class="result-count" id="lesson-count"></p>
-    <div id="lesson-list" class="lesson-list"></div>
   </section>
 
   <!-- ===== 단어장 ===== -->
   <section id="view-vocab" class="view" hidden>
     <div class="quiz-card" id="quiz">
-      <div class="quiz-head">
+      <div class="quiz-side">
         <span class="stamp hanzi">练习</span>
-        <span>플래시카드 — 한자를 보고 뜻을 떠올려 보세요</span>
+        <h2 class="quiz-title">플래시카드</h2>
+        <p class="quiz-desc">누적 <b id="quiz-total"></b>단어 중 무작위로 출제됩니다. 한자를 먼저 보고 병음과 뜻을 떠올린 뒤 확인하세요.</p>
+        <div class="quiz-actions">
+          <button id="quiz-reveal" class="btn primary">뜻 보기</button>
+          <button id="quiz-next" class="btn">다음 단어 →</button>
+        </div>
       </div>
-      <button class="quiz-word" id="quiz-word" aria-live="polite"></button>
-      <div class="quiz-answer" id="quiz-answer" hidden></div>
-      <div class="quiz-actions">
-        <button id="quiz-reveal" class="btn primary">뜻 보기</button>
-        <button id="quiz-next" class="btn">다음 단어 →</button>
+      <div class="quiz-stage">
+        <button class="quiz-word" id="quiz-word" aria-live="polite"></button>
+        <div class="quiz-answer" id="quiz-answer" hidden></div>
       </div>
     </div>
-    <div class="toolbar">
+    <div class="section-head">
+      <h2><span class="stamp hanzi">生词</span>누적 단어장</h2>
       <input type="search" id="vocab-search" placeholder="단어 검색 (한자·병음·뜻)" autocomplete="off">
       <span class="result-count" id="vocab-count"></span>
     </div>

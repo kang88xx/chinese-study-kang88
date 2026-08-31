@@ -15,32 +15,64 @@ function route() {
 window.addEventListener("hashchange", route);
 
 /* ===== 대시보드 ===== */
+const CURRENT_MONTH = "08"; // 최신 기록 월 (강조 표시)
+
 function renderDashboard() {
-  document.getElementById("p-done").textContent = PROGRESS.done;
-  document.getElementById("p-total").textContent = PROGRESS.total;
-  document.getElementById("p-pct").textContent = PROGRESS.pct + "% 완료";
-  document.getElementById("p-period").textContent = PROGRESS.start + " ~ " + PROGRESS.end;
-  requestAnimationFrame(() => {
-    document.getElementById("p-bar").style.width = PROGRESS.pct + "%";
-  });
+  document.getElementById("p-period").textContent = "수강기간 " + PROGRESS.start + " ~ " + PROGRESS.end;
   document.getElementById("footer-updated").textContent = "마지막 갱신: " + PROGRESS.updated;
 
   const fixCount = LESSONS.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
-  const stats = [
-    [PROGRESS.att + "회", "출석"],
-    [PROGRESS.abs + "일", "결석"],
-    [(PROGRESS.pp + PROGRESS.rp) + "일", "연기"],
-    [PROGRESS.cancel + "일", "휴강"],
-    [VOCAB.length + "개", "누적 단어"],
-    [fixCount + "건", "교정받은 표현"]
-  ];
-  document.getElementById("stats").innerHTML = stats.map(
-    ([b, s]) => `<div class="stat"><b>${esc(b)}</b><span>${esc(s)}</span></div>`
-  ).join("");
+  const remain = PROGRESS.total - PROGRESS.done;
 
+  // --- 진도 링 (SVG 도넛) + 벤토 타일 ---
+  const R = 82, C = 2 * Math.PI * R;
+  const off = C * (1 - PROGRESS.pct / 100);
+  const ring = `
+    <div class="bento-ring">
+      <div class="ring">
+        <svg viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="ring-track" cx="100" cy="100" r="${R}"></circle>
+          <circle class="ring-fill" cx="100" cy="100" r="${R}"
+            stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"
+            data-off="${off.toFixed(1)}" transform="rotate(-90 100 100)"></circle>
+        </svg>
+        <div class="ring-center">
+          <b>${PROGRESS.done}</b><span>/ ${PROGRESS.total}회</span><em>${PROGRESS.pct}%</em>
+        </div>
+      </div>
+      <div class="bento-ring-meta">
+        <p class="bento-ring-title">전체 진도</p>
+        <p class="bento-ring-sub">남은 수업 <b>${remain}회</b> · 출석 <b>${PROGRESS.att}회</b>가 곧 진도</p>
+      </div>
+    </div>`;
+
+  const tiles = [
+    { cls: "t-att wide", v: PROGRESS.att, u: "회", label: "출석", sub: `전체 ${PROGRESS.total}회 중`, accent: "att" },
+    { cls: "t-abs", v: PROGRESS.abs, u: "일", label: "결석", accent: "abs" },
+    { cls: "t-pp", v: PROGRESS.pp + PROGRESS.rp, u: "일", label: "연기", accent: "pp" },
+    { cls: "t-cancel", v: PROGRESS.cancel, u: "일", label: "휴강", accent: "cancel" },
+    { cls: "t-vocab wide", v: VOCAB.length, u: "개", label: "누적 단어", sub: `${CAL.length}개월간 수집`, accent: "vocab" },
+    { cls: "t-fix", v: fixCount, u: "건", label: "교정받은 표현", accent: "fix" }
+  ];
+  const tileHtml = tiles.map(t => `
+    <div class="tile ${t.cls}">
+      <span class="tile-val"><b>${t.v}</b>${t.u}</span>
+      <span class="tile-label">${esc(t.label)}</span>
+      ${t.sub ? `<span class="tile-sub">${esc(t.sub)}</span>` : ""}
+    </div>`).join("");
+
+  document.getElementById("bento").innerHTML = ring + tileHtml;
+  // 링 애니메이션
+  requestAnimationFrame(() => {
+    const f = document.querySelector(".ring-fill");
+    if (f) requestAnimationFrame(() => { f.style.strokeDashoffset = f.dataset.off; });
+  });
+
+  // --- 출석 달력 ---
   const DOW = ["일", "월", "화", "수", "목", "금", "토"];
   document.getElementById("cals").innerHTML = CAL.map(mo => {
     const attN = Object.keys(mo.att).length;
+    const cur = mo.key === CURRENT_MONTH ? " current" : "";
     let cells = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
     cells += `<div class="day empty"></div>`.repeat(mo.blanks);
     for (let d = 1; d <= mo.days; d++) {
@@ -55,7 +87,18 @@ function renderDashboard() {
       const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
       cells += `<div class="${cls}"><span class="${dcls}">${d}</span>${startMark}${tag}</div>`;
     }
-    return `<div class="calwrap"><h3>${esc(mo.name)}<span class="cnt">출석 ${attN}회</span></h3><div class="cal">${cells}</div></div>`;
+    // 월 요약 칩
+    const miss = mo.abs.length, pp = mo.pp.length + mo.rp.length, cxl = mo.cancel.length;
+    const chips = [
+      `<span class="mc mc-att">출석 ${attN}</span>`,
+      miss ? `<span class="mc mc-abs">결석 ${miss}</span>` : "",
+      pp ? `<span class="mc mc-pp">연기 ${pp}</span>` : "",
+      cxl ? `<span class="mc mc-cancel">휴강 ${cxl}</span>` : ""
+    ].join("");
+    return `<div class="calwrap${cur}">
+      <h3>${esc(mo.name)}${cur ? `<span class="now-badge">최신</span>` : ""}</h3>
+      <div class="mchips">${chips}</div>
+      <div class="cal">${cells}</div></div>`;
   }).join("");
 }
 
@@ -113,12 +156,29 @@ function renderLessons() {
           return `<span><b>${highlight(w.slice(0, sp), q)}</b>${highlight(w.slice(sp + 1), q)}</span>`;
         }).join("")}</div>`
       : "";
+    const fixN = l.items.filter(i => i.fix).length;
+    const badge = fixN ? `<span class="fix-badge">교정 ${fixN}</span>` : "";
     html += `<details class="lesson"${open}>
-      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${l.pct}%</span><span class="theme">${esc(l.theme)}</span></summary>
+      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${l.pct}%</span><span class="theme">${esc(l.theme)}</span>${badge}</summary>
       <div class="lbody">${items}${words}</div>
     </details>`;
   });
   document.getElementById("lesson-list").innerHTML = html;
+  renderSideStats();
+}
+
+function renderSideStats() {
+  const scope = lessonMonth === "all"
+    ? LESSONS
+    : LESSONS.filter(l => l.date.slice(5, 7) === lessonMonth);
+  const lessons = scope.length;
+  const fixes = scope.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
+  const words = scope.reduce((a, l) => a + l.words.length, 0);
+  const title = lessonMonth === "all" ? "전체 기간" : MONTH_NAMES[lessonMonth];
+  const rows = [["수업", lessons + "회"], ["단어", words + "개"], ["교정", fixes + "건"]];
+  document.getElementById("side-stats").innerHTML =
+    `<p class="side-stats-title">${esc(title)}</p>` +
+    rows.map(([k, v]) => `<div class="side-stat"><span>${k}</span><b>${v}</b></div>`).join("");
 }
 
 function setupLessonControls() {
@@ -149,6 +209,7 @@ function renderVocab(q = "") {
 }
 
 /* 플래시카드 */
+document.getElementById("quiz-total").textContent = VOCAB.length;
 let quizIdx = -1;
 function quizNext() {
   let i;
