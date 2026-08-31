@@ -8,9 +8,12 @@
 - **단어장** — 누적 130단어, 검색 + 플래시카드 퀴즈
 - **교정 노트** — 강사가 바로잡아 준 표현 모음 (✗ → ◯)
 
+## 디자인
+[Wanted Montage](https://montage.wanted.co.kr/) 디자인 시스템(MIT) 기반. Wanted 블루(#0066ff) 프라이머리, coolNeutral 그레이, 시맨틱 상태색, 부드러운 elevation, Wanted Sans/Pretendard 타이포그래피. 라이트/다크 모두 Montage 토큰으로 구성. 한자는 Noto Sans SC.
+
 ## 구조
 순수 정적 사이트 (빌드 없음): `index.html` + `styles.css` + `app.js` + `data.js`(수집 데이터).
-새 수업이 추가되면 `data.js`의 `PROGRESS` / `CAL` / `LESSONS` / `VOCAB`에 항목을 추가하고 푸시하면 됩니다.
+새 수업이 추가되면 `data.js`의 `PROGRESS` / `CAL` / `LESSONS` / `VOCAB`에 항목을 추가하고 푸시하면 됩니다. 디자인 토큰은 `styles.css` 상단 `:root`에 모여 있습니다.
 
 ## 배포
 Vercel — 이 저장소의 `main` 브랜치에 푸시하면 자동 재배포됩니다.
