@@ -51,18 +51,21 @@
       </div>
     </div>
 
-    <h2><span class="stamp hanzi">出席</span>출석 달력</h2>
+    <h2><span class="stamp hanzi">出席</span>출석 달력 <span class="src-tag">공식 출석부 기준</span></h2>
     <div class="cal-grid" id="cals"></div>
     <div class="legend">
-      <span class="l1"><i></i>수업한 날 (숫자는 누적 회차)</span>
-      <span class="l2"><i></i>주중 휴강</span>
-      <span class="l3"><i></i>메일만 오고 회차 정지</span>
+      <span class="l-att"><i></i>출석 (숫자는 누적 회차)</span>
+      <span class="l-abs"><i></i>결석</span>
+      <span class="l-cancel"><i></i>휴강</span>
+      <span class="l-pp"><i></i>일반연기</span>
+      <span class="l-rp"><i></i>정규연기</span>
     </div>
-    <p class="note">현재 수강권의 1회 = 2026-04-07 개강일. 휴강하면 수강 종료일이 그만큼 뒤로 밀립니다 (메일상 종료일 09-29 → 10-26 연장 확인). 7/16~24의 긴 공백은 휴가로 추정.</p>
+    <p class="note">중국교육센터 공식 출석부(홈페이지)를 그대로 옮긴 것입니다. 1회 = 2026-04-07 개강일이고, 출석 78회가 곧 현재 진도(78/120)예요. 결석·휴강·연기한 만큼 수강 종료일이 뒤로 밀려 10-26까지 연장됐습니다.</p>
   </section>
 
   <!-- ===== 수업 기록 ===== -->
   <section id="view-lessons" class="view" hidden>
+    <p class="note">강사평(일일 메일)에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일(대시보드 달력)과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
     <div class="toolbar">
       <div class="chips" id="month-chips"></div>
       <input type="search" id="lesson-search" placeholder="문장·단어·주제 검색 (예: 把, 감기, 摸鱼)" autocomplete="off">

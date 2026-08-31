@@ -26,32 +26,36 @@ function renderDashboard() {
   document.getElementById("footer-updated").textContent = "마지막 갱신: " + PROGRESS.updated;
 
   const fixCount = LESSONS.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
-  const lessonDays = CAL.reduce((a, m) => a + m.n, 0);
   const stats = [
-    [lessonDays + "일", "수업한 날"],
+    [PROGRESS.att + "회", "출석"],
+    [PROGRESS.abs + "일", "결석"],
+    [(PROGRESS.pp + PROGRESS.rp) + "일", "연기"],
+    [PROGRESS.cancel + "일", "휴강"],
     [VOCAB.length + "개", "누적 단어"],
-    [fixCount + "건", "교정받은 표현"],
-    [(PROGRESS.total - PROGRESS.done) + "회", "남은 수업"],
-    [CAL.length + "개월", "기록 기간"],
-    ["10분", "하루 수업"]
+    [fixCount + "건", "교정받은 표현"]
   ];
   document.getElementById("stats").innerHTML = stats.map(
     ([b, s]) => `<div class="stat"><b>${esc(b)}</b><span>${esc(s)}</span></div>`
   ).join("");
 
-  const DOW = ["월", "화", "수", "목", "금", "토", "일"];
+  const DOW = ["일", "월", "화", "수", "목", "금", "토"];
   document.getElementById("cals").innerHTML = CAL.map(mo => {
-    let cells = DOW.map(d => `<div class="dow">${d}</div>`).join("");
-    cells += `<div class="day"></div>`.repeat(mo.off);
+    const attN = Object.keys(mo.att).length;
+    let cells = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
+    cells += `<div class="day empty"></div>`.repeat(mo.blanks);
     for (let d = 1; d <= mo.days; d++) {
-      const wd = (mo.off + d - 1) % 7;
-      if (wd >= 5) cells += `<div class="day wknd"><span class="d">${d}</span></div>`;
-      else if (mo.l[d]) cells += `<div class="day lesson"><span class="d">${d}</span><span class="tag">${mo.l[d]}회</span></div>`;
-      else if (mo.st && mo.st.includes(d)) cells += `<div class="day stall"><span class="d">${d}</span><span class="tag">정지</span></div>`;
-      else if (mo.p && mo.p.includes(d)) cells += `<div class="day pre"><span class="d">${d}</span></div>`;
-      else cells += `<div class="day miss"><span class="d">${d}</span><span class="tag">휴강</span></div>`;
+      const wd = (mo.blanks + d - 1) % 7;
+      const dcls = wd === 0 ? "d sun" : wd === 6 ? "d sat" : "d";
+      let cls = "day", tag = "";
+      if (mo.att[d] !== undefined) { cls += " att"; tag = `<span class="tag">${mo.att[d]}회</span>`; }
+      else if (mo.abs.includes(d)) { cls += " abs"; tag = `<span class="tag">결석</span>`; }
+      else if (mo.cancel.includes(d)) { cls += " cancel"; tag = `<span class="tag">휴강</span>`; }
+      else if (mo.pp.includes(d)) { cls += " pp"; tag = `<span class="tag">연기</span>`; }
+      else if (mo.rp.includes(d)) { cls += " rp"; tag = `<span class="tag">연기</span>`; }
+      const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
+      cells += `<div class="${cls}"><span class="${dcls}">${d}</span>${startMark}${tag}</div>`;
     }
-    return `<div class="calwrap"><h3>${esc(mo.name)}<span class="cnt">수업 ${mo.n}일</span></h3><div class="cal">${cells}</div></div>`;
+    return `<div class="calwrap"><h3>${esc(mo.name)}<span class="cnt">출석 ${attN}회</span></h3><div class="cal">${cells}</div></div>`;
   }).join("");
 }
 
