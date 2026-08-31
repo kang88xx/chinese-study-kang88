@@ -13,5 +13,5 @@
 새 수업이 추가되면 `data.js`의 `PROGRESS` / `CAL` / `LESSONS` / `VOCAB`에 항목을 추가하고 푸시하면 됩니다.
 
 ## 배포
-GitHub Pages (main 브랜치 루트) + `CNAME`(chinese.study.kang88.io).
-DNS: `chinese.study` CNAME → `kang88xx.github.io`
+Vercel — 이 저장소의 `main` 브랜치에 푸시하면 자동 재배포됩니다.
+도메인: https://chinese.study.kang88.io (kang88.io는 Vercel DNS + 와일드카드라 별도 DNS 설정 불필요)
