@@ -200,7 +200,7 @@ main {
 /* ================= 버튼 · 칩 ================= */
 .btn {
   height: 40px; padding: 0 22px; border: 0; border-radius: 999px;
-  font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .15s, box-shadow .15s;
 }
@@ -519,40 +519,6 @@ footer {
   font-size: 12.5px; color: var(--on-surface-3);
 }
 
-/* ================= 반응형 ================= */
-@media (max-width: 900px) {
-  .appbar { grid-template-columns: 1fr auto; height: auto; padding: 10px 12px; gap: 10px; }
-  .searchbar { grid-column: 1 / -1; order: 3; }
-  .appbar-right .pill-quiet { display: none; }
-  .brand-name { font-size: 17px; }
-
-  .shell { flex-direction: column; }
-  .rail {
-    position: sticky; top: 0; z-index: 20;
-    flex-direction: row; width: 100%; flex: none; height: auto;
-    padding: 4px 8px; gap: 2px;
-    background: var(--bg); border-bottom: 1px solid var(--outline-soft);
-    overflow-x: auto;
-  }
-  .rail a { width: auto; flex: 1 0 auto; padding: 6px 10px; }
-  main { padding: 8px 16px 56px; max-width: 100%; }
-
-  .week-strip { flex-wrap: nowrap; gap: 0; }
-  .week-strip .wd { width: auto; flex: 1 1 0; min-width: 0; }
-  .banner { flex-wrap: wrap; padding: 14px 16px; }
-  .banner .btn { margin-left: auto; }
-  .banner-text { flex: 1 1 200px; }
-
-  .bento { flex-direction: column; }
-  .bento-ring { flex: none; }
-  .stat-row { grid-template-columns: repeat(3, 1fr); }
-  .lessons-layout { grid-template-columns: 1fr; }
-  .lessons-side { position: static; }
-  .chips.vertical { flex-direction: row; flex-wrap: wrap; }
-  .quiz-card { grid-template-columns: 1fr; padding: 20px; }
-  .side-search.inline { width: 100%; }
-}
-
 /* ================= 수업 상세 모달 ================= */
 .day[data-state] { cursor: pointer; }
 .day[data-state]:hover { box-shadow: 0 0 0 2px var(--blue); }
@@ -579,11 +545,12 @@ footer {
 .icon-btn {
   border: 0; background: none; cursor: pointer; color: var(--on-surface-3);
   width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center;
+  flex: 0 0 36px;
 }
 .icon-btn:hover { background: var(--surface-2); }
 
 .modal-body {
-  padding: 4px 24px 8px; overflow-y: auto;
+  padding: 4px 24px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   display: flex; flex-direction: column; gap: 16px;
 }
 .modal-meta { margin: 0; font-size: 12.5px; color: var(--on-surface-3); }
@@ -593,4 +560,132 @@ footer {
 .modal-foot {
   display: flex; justify-content: flex-end; align-items: center; gap: 8px;
   padding: 12px 20px 18px;
+}
+
+/* ================= 반응형 ================= */
+@media (max-width: 900px) {
+  /* --- 앱바: 2줄 구성, 높이 축소 --- */
+  .appbar {
+    grid-template-columns: 1fr auto;
+    height: auto; padding: 8px 12px 10px; gap: 8px 10px;
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .searchbar { grid-column: 1 / -1; order: 3; height: 40px; padding: 0 14px; }
+  .appbar-right .pill-quiet { display: none; }
+  .pill { height: 30px; padding: 0 12px; font-size: 12px; }
+  .brand-mark { width: 30px; height: 30px; border-radius: 8px; font-size: 17px; }
+  .brand-name { font-size: 16px; }
+
+  /* --- 레일: 하단 고정 내비게이션 --- */
+  .shell { flex-direction: column; }
+  .rail {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 40;
+    flex-direction: row; width: 100%; flex: none; height: auto;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    gap: 0;
+    background: var(--surface-1);
+    border-top: 1px solid var(--outline-soft);
+  }
+  .rail a { width: auto; flex: 1 1 0; padding: 2px 0; gap: 2px; }
+  .rail-icon { width: 52px; height: 30px; }
+  .rail-label { font-size: 11px; }
+
+  main { padding: 4px 16px calc(84px + env(safe-area-inset-bottom)); max-width: 100%; }
+
+  /* --- 페이지 헤더 --- */
+  .page-head { padding: 6px 0 12px; gap: 8px; }
+  .page-head h1 { font-size: 19px; }
+  .page-sub { font-size: 13px; }
+
+  /* --- 날짜 스트립 --- */
+  .week-strip { gap: 0; }
+  .week-strip .wd { flex: 1 1 0; min-width: 0; }
+  .week-strip .wd .n { width: 30px; height: 30px; font-size: 13px; }
+
+  /* --- 배너 --- */
+  .banner { flex-wrap: nowrap; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+  .banner-icon .mi { font-size: 20px; }
+  .banner-text b { font-size: 13px; }
+  .banner-text span { font-size: 12.5px; }
+  .banner .btn { display: none; }
+  .banner-text { flex: 1 1 auto; }
+
+  /* --- 요약 스트립 --- */
+  .bento { flex-direction: column; gap: 8px; }
+  .bento-ring { flex: none; padding: 14px 16px; gap: 14px; }
+  .ring, .ring-center { width: 96px; flex: 0 0 96px; }
+  .ring-center b { font-size: 23px; }
+  .stat-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .tile { padding: 10px 12px; border-radius: var(--r-md); }
+  .tile-val b { font-size: 22px; }
+  .tile-label { font-size: 12px; }
+
+  /* --- 달력 --- */
+  .section-head { margin: 20px 0 10px; }
+  .section-head h2 { font-size: 17px; }
+  .cal-grid { grid-template-columns: 1fr; gap: 10px; }
+  .calwrap { padding: 14px; }
+  .legend { gap: 4px 12px; font-size: 12px; }
+
+  /* --- 수업 기록 --- */
+  .lessons-layout { grid-template-columns: 1fr; gap: 16px; }
+  .lessons-side { position: static; }
+  .side-panel { padding: 12px; gap: 10px; background: none; }
+  .side-search { background: var(--surface-2); border-color: transparent; }
+  .side-search.inline { width: 100%; }
+  .chips.vertical {
+    flex-direction: row; flex-wrap: nowrap;
+    overflow-x: auto; gap: 6px;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .chips.vertical::-webkit-scrollbar { display: none; }
+  .chips button { white-space: nowrap; padding: 7px 14px; background: var(--surface-2); }
+  .side-stats { display: flex; gap: 16px; border-top: 1px solid var(--outline-soft); padding-top: 10px; }
+  .side-stats-title { display: none; }
+  .side-stat { gap: 6px; }
+
+  details.lesson summary { padding: 12px 14px; gap: 8px; }
+  summary .theme { flex-basis: 100%; padding-left: 28px; }
+  .fix-badge { margin-left: 0; }
+  .lbody { padding: 14px; }
+  .sent .zh { font-size: 17px; }
+
+  /* --- 단어장 --- */
+  .quiz-card { grid-template-columns: 1fr; padding: 16px; gap: 14px; }
+  .quiz-title { font-size: 17px; }
+  .quiz-stage { min-height: 150px; padding: 16px; }
+  .quiz-word { font-size: 40px; }
+  .quiz-actions .btn { flex: 1; padding: 0 12px; }
+  .tablewrap { max-height: none; }
+  table { min-width: 0; }
+  th, td { padding: 9px 10px; }
+  thead th:first-child, td.date { display: none; }
+  td.zh { font-size: 16px; }
+  td.py { font-size: 12px; white-space: normal; }
+
+  /* --- 교정 노트 --- */
+  .fix-list { grid-template-columns: 1fr; }
+  .fix-item { padding: 14px; }
+  .fix-item .pair { font-size: 16px; }
+
+  /* --- 모달: 바텀 시트 --- */
+  .modal { padding: 0; place-items: end stretch; }
+  .modal-card {
+    width: 100%; max-height: 88vh;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    animation: sheet-in .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .modal-head { padding: 18px 18px 10px; }
+  .modal-title { font-size: 18px; }
+  .modal-body { padding: 4px 18px 8px; }
+  .modal-foot { padding: 10px 14px calc(16px + env(safe-area-inset-bottom)); }
+
+  footer { margin-top: 32px; font-size: 12px; }
+}
+
+@keyframes sheet-in { from { transform: translateY(24px); opacity: .6; } }
+
+@media (max-width: 340px) {
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .brand-name { font-size: 15px; }
 }
