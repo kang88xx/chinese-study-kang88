@@ -5,117 +5,154 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>电话汉语 학습장 — kang88</title>
 <meta name="description" content="전화중국어 수업 기록: 진도·출석 달력·수업별 어법·누적 단어장·교정 노트">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🀄</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/wanted-sans@1.0.3/fonts/webfonts/variable/split/WantedSansVariable.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<nav class="topnav">
+<header class="appbar">
   <a class="brand" href="#home">
-    <span class="hanzi seal-mark">电话汉语</span><span class="brand-ko">학습장</span>
+    <span class="brand-mark" aria-hidden="true">汉</span>
+    <span class="brand-name">电话汉语 <b>학습장</b></span>
   </a>
-  <div class="tabs" role="tablist">
-    <a href="#home" data-tab="home">대시보드</a>
-    <a href="#lessons" data-tab="lessons">수업 기록</a>
-    <a href="#vocab" data-tab="vocab">단어장</a>
-    <a href="#fix" data-tab="fix">교정 노트</a>
+
+  <div class="searchbar">
+    <i class="mi" aria-hidden="true">search</i>
+    <input id="global-search" type="search" placeholder="문장 · 단어 · 주제 검색" autocomplete="off" aria-label="전체 검색">
   </div>
-</nav>
 
-<main>
-  <!-- ===== 대시보드 ===== -->
-  <section id="view-home" class="view">
-    <div class="hero-band">
-      <div class="hero-band-text">
-        <p class="eyebrow">맛있는 비즈니스 중국어 LEVEL 4 · 쟌슈위 강사 · 매일 10:50–11:00</p>
-        <h1><span class="hanzi accent">每天十分钟</span>, 매일 10분의 기록</h1>
-        <p class="hero-desc">중국교육센터 일일강사평을 자동 수집해 쌓아 가는 학습 아카이브. 2026-04-07 개강부터 지금까지의 모든 수업이 담겨 있습니다.</p>
-        <p class="hero-period" id="p-period"></p>
+  <div class="appbar-right">
+    <span class="pill pill-tonal" id="ab-progress"></span>
+    <span class="pill pill-quiet" id="ab-updated"></span>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="rail" aria-label="주요 메뉴">
+    <a href="#home" data-tab="home"><span class="rail-icon"><i class="mi">space_dashboard</i></span><span class="rail-label">대시보드</span></a>
+    <a href="#lessons" data-tab="lessons"><span class="rail-icon"><i class="mi">menu_book</i></span><span class="rail-label">수업 기록</span></a>
+    <a href="#vocab" data-tab="vocab"><span class="rail-icon"><i class="mi">style</i></span><span class="rail-label">단어장</span></a>
+    <a href="#fix" data-tab="fix"><span class="rail-icon"><i class="mi">edit_note</i></span><span class="rail-label">교정 노트</span></a>
+  </nav>
+
+  <main>
+    <!-- ===== 대시보드 ===== -->
+    <section id="view-home" class="view">
+      <div class="page-head">
+        <h1 id="today-title">오늘</h1>
+        <div class="week-strip" id="week-strip"></div>
       </div>
-    </div>
 
-    <div class="bento" id="bento"></div>
-
-    <div class="section-head">
-      <h2><span class="stamp hanzi">出席</span>출석 달력</h2>
-      <span class="src-tag">공식 출석부 기준</span>
-    </div>
-    <div class="cal-grid" id="cals"></div>
-    <div class="legend">
-      <span class="l-att"><i></i>출석 (숫자는 누적 회차)</span>
-      <span class="l-abs"><i></i>결석</span>
-      <span class="l-cancel"><i></i>휴강</span>
-      <span class="l-pp"><i></i>일반연기</span>
-      <span class="l-rp"><i></i>정규연기</span>
-    </div>
-    <p class="note">중국교육센터 공식 출석부(홈페이지)를 그대로 옮긴 것입니다. 1회 = 2026-04-07 개강일이고, 출석 78회가 곧 현재 진도(78/120)예요. 결석·휴강·연기한 만큼 수강 종료일이 뒤로 밀려 10-26까지 연장됐습니다.</p>
-  </section>
-
-  <!-- ===== 수업 기록 ===== -->
-  <section id="view-lessons" class="view" hidden>
-    <div class="lessons-layout">
-      <aside class="lessons-side">
-        <div class="side-panel">
-          <input type="search" id="lesson-search" placeholder="문장·단어·주제 검색" autocomplete="off">
-          <div class="chips vertical" id="month-chips"></div>
-          <div class="side-stats" id="side-stats"></div>
+      <div class="banner">
+        <span class="banner-icon"><i class="mi">verified_user</i></span>
+        <div class="banner-text">
+          <b>공식 출석부 기준으로 기록됩니다</b>
+          <span>중국교육센터 홈페이지 출석부를 그대로 옮겼습니다. 1회 = 2026-04-07 개강일이고, 출석 회차가 곧 진도예요.</span>
         </div>
-      </aside>
-      <div class="lessons-main">
-        <p class="note">강사평(일일 메일)에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일(대시보드 달력)과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
-        <p class="result-count" id="lesson-count"></p>
-        <div id="lesson-list" class="lesson-list"></div>
+        <a class="btn btn-quiet" href="#lessons">수업 기록 보기</a>
       </div>
-    </div>
-  </section>
 
-  <!-- ===== 단어장 ===== -->
-  <section id="view-vocab" class="view" hidden>
-    <div class="quiz-card" id="quiz">
-      <div class="quiz-side">
-        <span class="stamp hanzi">练习</span>
-        <h2 class="quiz-title">플래시카드</h2>
-        <p class="quiz-desc">누적 <b id="quiz-total"></b>단어 중 무작위로 출제됩니다. 한자를 먼저 보고 병음과 뜻을 떠올린 뒤 확인하세요.</p>
-        <div class="quiz-actions">
-          <button id="quiz-reveal" class="btn primary">뜻 보기</button>
-          <button id="quiz-next" class="btn">다음 단어 →</button>
+      <div class="bento" id="bento"></div>
+
+      <div class="section-head">
+        <h2>출석 달력</h2>
+        <span class="chip chip-quiet">공식 출석부 기준</span>
+      </div>
+      <div class="cal-grid" id="cals"></div>
+      <div class="legend">
+        <span class="l-att"><i></i>출석 (숫자는 누적 회차)</span>
+        <span class="l-abs"><i></i>결석</span>
+        <span class="l-cancel"><i></i>휴강</span>
+        <span class="l-pp"><i></i>일반연기</span>
+        <span class="l-rp"><i></i>정규연기</span>
+      </div>
+      <p class="note">결석·휴강·연기한 만큼 수강 종료일이 뒤로 밀려 2026-10-26까지 연장됐습니다.</p>
+    </section>
+
+    <!-- ===== 수업 기록 ===== -->
+    <section id="view-lessons" class="view" hidden>
+      <div class="page-head">
+        <h1>수업 기록</h1>
+        <p class="page-sub">강사평 메일에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
+      </div>
+      <div class="lessons-layout">
+        <aside class="lessons-side">
+          <div class="side-panel">
+            <div class="side-search">
+              <i class="mi" aria-hidden="true">search</i>
+              <input type="search" id="lesson-search" placeholder="검색" autocomplete="off">
+            </div>
+            <div class="chips vertical" id="month-chips"></div>
+            <div class="side-stats" id="side-stats"></div>
+          </div>
+        </aside>
+        <div class="lessons-main">
+          <p class="result-count" id="lesson-count"></p>
+          <div id="lesson-list" class="lesson-list"></div>
         </div>
       </div>
-      <div class="quiz-stage">
-        <button class="quiz-word" id="quiz-word" aria-live="polite"></button>
-        <div class="quiz-answer" id="quiz-answer" hidden></div>
+    </section>
+
+    <!-- ===== 단어장 ===== -->
+    <section id="view-vocab" class="view" hidden>
+      <div class="page-head">
+        <h1>단어장</h1>
+        <p class="page-sub">누적 <b id="quiz-total"></b>개 단어. 플래시카드로 먼저 떠올려 보고, 아래 표에서 찾아보세요.</p>
       </div>
-    </div>
-    <div class="section-head">
-      <h2><span class="stamp hanzi">生词</span>누적 단어장</h2>
-      <input type="search" id="vocab-search" placeholder="단어 검색 (한자·병음·뜻)" autocomplete="off">
-      <span class="result-count" id="vocab-count"></span>
-    </div>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>날짜</th><th>중국어</th><th>병음</th><th>뜻</th></tr></thead>
-        <tbody id="vocab-body"></tbody>
-      </table>
-    </div>
-  </section>
 
-  <!-- ===== 교정 노트 ===== -->
-  <section id="view-fix" class="view" hidden>
-    <p class="note">강사가 수업 중 바로잡아 준 표현들 — 틀린 문장과 맞는 문장을 나란히. 시험 전 여기만 훑어도 됩니다.</p>
-    <div id="fix-list" class="fix-list"></div>
-  </section>
-</main>
+      <div class="quiz-card" id="quiz">
+        <div class="quiz-side">
+          <span class="chip chip-tonal">플래시카드</span>
+          <h2 class="quiz-title">한자를 보고 뜻을 떠올려 보세요</h2>
+          <p class="quiz-desc">무작위로 출제됩니다. 카드를 누르면 병음과 뜻이 나옵니다.</p>
+          <div class="quiz-actions">
+            <button id="quiz-reveal" class="btn btn-filled">뜻 보기</button>
+            <button id="quiz-next" class="btn btn-tonal">다음 단어</button>
+          </div>
+        </div>
+        <div class="quiz-stage">
+          <button class="quiz-word" id="quiz-word" aria-live="polite"></button>
+          <div class="quiz-answer" id="quiz-answer" hidden></div>
+        </div>
+      </div>
 
-<footer>
-  <span>출처: 중국교육센터 일일강사평 메일 (IMAP 자동 수집)</span>
-  <span id="footer-updated"></span>
-</footer>
+      <div class="section-head">
+        <h2>누적 단어장</h2>
+        <div class="side-search inline">
+          <i class="mi" aria-hidden="true">search</i>
+          <input type="search" id="vocab-search" placeholder="한자 · 병음 · 뜻" autocomplete="off">
+        </div>
+        <span class="result-count" id="vocab-count"></span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>날짜</th><th>중국어</th><th>병음</th><th>뜻</th></tr></thead>
+          <tbody id="vocab-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== 교정 노트 ===== -->
+    <section id="view-fix" class="view" hidden>
+      <div class="page-head">
+        <h1>교정 노트</h1>
+        <p class="page-sub">강사가 수업 중 바로잡아 준 표현들 — 틀린 문장과 맞는 문장을 나란히. 시험 전 여기만 훑어도 됩니다.</p>
+      </div>
+      <div id="fix-list" class="fix-list"></div>
+    </section>
+
+    <footer>
+      <span>출처: 중국교육센터 일일강사평 메일 (IMAP 자동 수집)</span>
+      <span id="footer-updated"></span>
+    </footer>
+  </main>
+</div>
 
 <script src="data.js"></script>
 <script src="app.js"></script>

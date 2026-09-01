@@ -7,7 +7,7 @@ function route() {
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   TABS.forEach(t => {
     document.getElementById("view-" + t).hidden = t !== tab;
-    document.querySelectorAll(`.tabs a[data-tab="${t}"]`)
+    document.querySelectorAll(`.rail a[data-tab="${t}"]`)
       .forEach(a => a.classList.toggle("active", t === tab));
   });
   window.scrollTo({ top: 0 });
@@ -17,9 +17,43 @@ window.addEventListener("hashchange", route);
 /* ===== 대시보드 ===== */
 const CURRENT_MONTH = "09"; // 최신 기록 월 (강조 표시)
 
+/* 최신 기록일이 포함된 주(일~토) 스트립 — Meet 날짜 행 스타일 */
+function renderWeekStrip() {
+  const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+  const [y, m, d] = PROGRESS.updated.split("-").map(Number);
+  const anchor = new Date(y, m - 1, d);
+  const sunday = new Date(anchor);
+  sunday.setDate(anchor.getDate() - anchor.getDay());
+
+  document.getElementById("today-title").textContent =
+    `${m}월 ${d}일 (${DOW[anchor.getDay()]}) · 최근 수업`;
+
+  let html = "";
+  for (let i = 0; i < 7; i++) {
+    const cur = new Date(sunday);
+    cur.setDate(sunday.getDate() + i);
+    const key = String(cur.getMonth() + 1).padStart(2, "0");
+    const day = cur.getDate();
+    const mo = CAL.find(c => c.key === key);
+    let cls = "wd";
+    if (mo) {
+      if (mo.att[day] !== undefined) cls += " att";
+      else if (mo.abs.includes(day)) cls += " abs";
+      else if (mo.cancel.includes(day)) cls += " cancel";
+      else if (mo.pp.includes(day)) cls += " pp";
+      else if (mo.rp.includes(day)) cls += " rp";
+    }
+    if (cur.getTime() === anchor.getTime()) cls += " today";
+    html += `<div class="${cls}"><span>${DOW[i]}</span><span class="n">${day}</span></div>`;
+  }
+  document.getElementById("week-strip").innerHTML = html;
+}
+
 function renderDashboard() {
-  document.getElementById("p-period").textContent = "수강기간 " + PROGRESS.start + " ~ " + PROGRESS.end;
+  document.getElementById("ab-progress").textContent = `${PROGRESS.done} / ${PROGRESS.total}회 · ${PROGRESS.pct}%`;
+  document.getElementById("ab-updated").textContent = `수강기간 ${PROGRESS.start} ~ ${PROGRESS.end}`;
   document.getElementById("footer-updated").textContent = "마지막 갱신: " + PROGRESS.updated;
+  renderWeekStrip();
 
   const fixCount = LESSONS.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const remain = PROGRESS.total - PROGRESS.done;
@@ -103,7 +137,7 @@ function renderDashboard() {
 }
 
 /* ===== 수업 기록 ===== */
-const MONTH_NAMES = { "04": "4월 (개강)", "05": "5월", "06": "6월", "07": "7월", "08": "8월" };
+const MONTH_NAMES = { "04": "4월 (개강)", "05": "5월", "06": "6월", "07": "7월", "08": "8월", "09": "9월" };
 let lessonMonth = "all";
 let lessonQuery = "";
 
@@ -256,4 +290,10 @@ document.getElementById("quiz-reveal").addEventListener("click", quizReveal);
 document.getElementById("quiz-word").addEventListener("click", quizReveal);
 document.getElementById("quiz-next").addEventListener("click", quizNext);
 document.getElementById("vocab-search").addEventListener("input", e => renderVocab(e.target.value.trim()));
+document.getElementById("global-search").addEventListener("input", e => {
+  lessonQuery = e.target.value;
+  document.getElementById("lesson-search").value = lessonQuery;
+  if (lessonQuery && location.hash !== "#lessons") location.hash = "#lessons";
+  renderLessons();
+});
 route();
