@@ -164,16 +164,17 @@ main {
 .page-sub b { color: var(--on-surface-2); }
 
 /* 주간 스트립 (Meet 날짜 행) */
-.week-strip { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.week-strip { display: flex; align-items: flex-end; gap: 2px; width: 100%; }
 .week-strip .wd {
-  width: 56px; padding: 4px 0 6px; border-radius: 999px;
+  flex: 1 1 0; min-width: 0; padding: 2px 0 4px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  font-size: 12px; color: var(--on-surface-3);
+  font-size: 11px; color: var(--on-surface-3); white-space: nowrap;
 }
+.week-strip .wd .dw { font-size: 11px; }
 .week-strip .wd .n {
-  width: 34px; height: 34px; border-radius: 999px;
+  width: 32px; height: 32px; border-radius: 999px;
   display: grid; place-items: center;
-  font-size: 15px; font-weight: 500; color: var(--on-surface);
+  font-size: 14px; font-weight: 500; color: var(--on-surface);
 }
 .week-strip .wd.att .n { background: var(--blue-cont); color: var(--blue); }
 .week-strip .wd.abs .n { background: var(--red-soft); color: var(--red); }
@@ -328,18 +329,17 @@ main {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .day.empty { visibility: hidden; }
-.day .d { font-size: 12.5px; font-weight: 500; color: var(--on-surface-2); line-height: 1.1; }
+.day .d { font-size: 13px; font-weight: 500; color: var(--on-surface-2); line-height: 1; }
 .day .d.sun { color: var(--red); }
 .day .d.sat { color: var(--blue-text); }
-.day .tag { font-size: 9px; line-height: 1.2; opacity: .85; }
 .day.att    { background: var(--blue-cont); }
-.day.att .d, .day.att .tag { color: var(--blue); }
+.day.att .d { color: var(--blue); }
 .day.abs    { background: var(--red-soft); }
-.day.abs .d, .day.abs .tag { color: var(--red); }
+.day.abs .d { color: var(--red); }
 .day.cancel { background: var(--surface-2); }
-.day.cancel .d, .day.cancel .tag { color: var(--on-surface-3); }
+.day.cancel .d { color: var(--on-surface-3); }
 .day.pp, .day.rp { background: var(--yellow-soft); }
-.day.pp .d, .day.pp .tag, .day.rp .d, .day.rp .tag { color: var(--yellow); }
+.day.pp .d, .day.rp .d { color: var(--yellow); }
 .day.rp { box-shadow: inset 0 0 0 1.5px var(--yellow-cont); }
 .start-badge {
   position: absolute; top: -3px; right: -2px;

@@ -17,37 +17,52 @@ window.addEventListener("hashchange", route);
 /* ===== 대시보드 ===== */
 const CURRENT_MONTH = "09"; // 최신 기록 월 (강조 표시)
 
-/* 최신 기록일이 포함된 주(일~토) 스트립 — Meet 날짜 행 스타일 */
+/* 날짜 스트립 — 오른쪽 끝이 최신 기록일, 가로 폭이 허용하는 만큼 과거로 채움 */
+const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
+
+function dayStatus(date) {
+  const key = String(date.getMonth() + 1).padStart(2, "0");
+  const d = date.getDate();
+  const mo = CAL.find(c => c.key === key);
+  if (!mo) return "";
+  if (mo.att[d] !== undefined) return "att";
+  if (mo.abs.includes(d)) return "abs";
+  if (mo.cancel.includes(d)) return "cancel";
+  if (mo.pp.includes(d)) return "pp";
+  if (mo.rp.includes(d)) return "rp";
+  return "";
+}
+
 function renderWeekStrip() {
-  const DOW = ["일", "월", "화", "수", "목", "금", "토"];
   const [y, m, d] = PROGRESS.updated.split("-").map(Number);
   const anchor = new Date(y, m - 1, d);
-  const sunday = new Date(anchor);
-  sunday.setDate(anchor.getDate() - anchor.getDay());
+  const strip = document.getElementById("week-strip");
 
   document.getElementById("today-title").textContent =
-    `${m}월 ${d}일 (${DOW[anchor.getDay()]}) · 최근 수업`;
+    `${m}월 ${d}일 (${DOW_KO[anchor.getDay()]}) · 최근 수업`;
+
+  const ITEM = 46;
+  const width = strip.clientWidth || strip.parentElement.clientWidth || 700;
+  const count = Math.max(7, Math.min(45, Math.floor(width / ITEM)));
 
   let html = "";
-  for (let i = 0; i < 7; i++) {
-    const cur = new Date(sunday);
-    cur.setDate(sunday.getDate() + i);
-    const key = String(cur.getMonth() + 1).padStart(2, "0");
-    const day = cur.getDate();
-    const mo = CAL.find(c => c.key === key);
-    let cls = "wd";
-    if (mo) {
-      if (mo.att[day] !== undefined) cls += " att";
-      else if (mo.abs.includes(day)) cls += " abs";
-      else if (mo.cancel.includes(day)) cls += " cancel";
-      else if (mo.pp.includes(day)) cls += " pp";
-      else if (mo.rp.includes(day)) cls += " rp";
-    }
-    if (cur.getTime() === anchor.getTime()) cls += " today";
-    html += `<div class="${cls}"><span>${DOW[i]}</span><span class="n">${day}</span></div>`;
+  for (let i = count - 1; i >= 0; i--) {
+    const cur = new Date(anchor);
+    cur.setDate(anchor.getDate() - i);
+    let cls = "wd " + dayStatus(cur);
+    if (i === 0) cls += " today";
+    const first = cur.getDate() === 1 || i === count - 1;
+    const label = first ? `${cur.getMonth() + 1}/${cur.getDate()}` : DOW_KO[cur.getDay()];
+    html += `<div class="${cls.trim()}"><span class="dw">${label}</span><span class="n">${cur.getDate()}</span></div>`;
   }
-  document.getElementById("week-strip").innerHTML = html;
+  strip.innerHTML = html;
 }
+
+let stripTimer;
+window.addEventListener("resize", () => {
+  clearTimeout(stripTimer);
+  stripTimer = setTimeout(renderWeekStrip, 150);
+});
 
 function renderDashboard() {
   document.getElementById("ab-progress").textContent = `${PROGRESS.done} / ${PROGRESS.total}회 · ${PROGRESS.pct}%`;
@@ -102,7 +117,7 @@ function renderDashboard() {
   });
 
   // --- 출석 달력 ---
-  const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+  const DOW = DOW_KO;
   document.getElementById("cals").innerHTML = CAL.map(mo => {
     const attN = Object.keys(mo.att).length;
     const cur = mo.key === CURRENT_MONTH ? " current" : "";
@@ -111,14 +126,15 @@ function renderDashboard() {
     for (let d = 1; d <= mo.days; d++) {
       const wd = (mo.blanks + d - 1) % 7;
       const dcls = wd === 0 ? "d sun" : wd === 6 ? "d sat" : "d";
-      let cls = "day", tag = "";
-      if (mo.att[d] !== undefined) { cls += " att"; tag = `<span class="tag">${mo.att[d]}회</span>`; }
-      else if (mo.abs.includes(d)) { cls += " abs"; tag = `<span class="tag">결석</span>`; }
-      else if (mo.cancel.includes(d)) { cls += " cancel"; tag = `<span class="tag">휴강</span>`; }
-      else if (mo.pp.includes(d)) { cls += " pp"; tag = `<span class="tag">연기</span>`; }
-      else if (mo.rp.includes(d)) { cls += " rp"; tag = `<span class="tag">연기</span>`; }
+      let cls = "day", title = "";
+      if (mo.att[d] !== undefined) { cls += " att"; title = `출석 · ${mo.att[d]}회차`; }
+      else if (mo.abs.includes(d)) { cls += " abs"; title = "결석"; }
+      else if (mo.cancel.includes(d)) { cls += " cancel"; title = "휴강"; }
+      else if (mo.pp.includes(d)) { cls += " pp"; title = "일반연기"; }
+      else if (mo.rp.includes(d)) { cls += " rp"; title = "정규연기"; }
       const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
-      cells += `<div class="${cls}"><span class="${dcls}">${d}</span>${startMark}${tag}</div>`;
+      const t = title ? ` title="${mo.name} ${d}일 — ${title}"` : "";
+      cells += `<div class="${cls}"${t}><span class="${dcls}">${d}</span>${startMark}</div>`;
     }
     // 월 요약 칩
     const miss = mo.abs.length, pp = mo.pp.length + mo.rp.length, cxl = mo.cancel.length;
