@@ -59,7 +59,7 @@ function renderDashboard() {
   const remain = PROGRESS.total - PROGRESS.done;
 
   // --- 진도 링 (SVG 도넛) + 벤토 타일 ---
-  const R = 82, C = 2 * Math.PI * R;
+  const R = 84, C = 2 * Math.PI * R;
   const off = C * (1 - PROGRESS.pct / 100);
   const ring = `
     <div class="bento-ring">
@@ -76,24 +76,23 @@ function renderDashboard() {
       </div>
       <div class="bento-ring-meta">
         <p class="bento-ring-title">전체 진도</p>
-        <p class="bento-ring-sub">남은 수업 <b>${remain}회</b> · 출석 <b>${PROGRESS.att}회</b>가 곧 진도</p>
+        <p class="bento-ring-sub">남은 수업 <b>${remain}회</b><br>출석 <b>${PROGRESS.att}회</b>가 곧 진도</p>
       </div>
     </div>`;
 
   const tiles = [
-    { cls: "t-att wide", v: PROGRESS.att, u: "회", label: "출석", sub: `전체 ${PROGRESS.total}회 중`, accent: "att" },
-    { cls: "t-abs", v: PROGRESS.abs, u: "일", label: "결석", accent: "abs" },
-    { cls: "t-pp", v: PROGRESS.pp + PROGRESS.rp, u: "일", label: "연기", accent: "pp" },
-    { cls: "t-cancel", v: PROGRESS.cancel, u: "일", label: "휴강", accent: "cancel" },
-    { cls: "t-vocab wide", v: VOCAB.length, u: "개", label: "누적 단어", sub: `${CAL.length}개월간 수집`, accent: "vocab" },
-    { cls: "t-fix", v: fixCount, u: "건", label: "교정받은 표현", accent: "fix" }
+    { cls: "t-att", v: PROGRESS.att, u: "회", label: "출석" },
+    { cls: "t-abs", v: PROGRESS.abs, u: "일", label: "결석" },
+    { cls: "t-pp", v: PROGRESS.pp + PROGRESS.rp, u: "일", label: "연기" },
+    { cls: "t-cancel", v: PROGRESS.cancel, u: "일", label: "휴강" },
+    { cls: "t-vocab", v: VOCAB.length, u: "개", label: "누적 단어" },
+    { cls: "t-fix", v: fixCount, u: "건", label: "교정 표현" }
   ];
-  const tileHtml = tiles.map(t => `
+  const tileHtml = `<div class="stat-row">` + tiles.map(t => `
     <div class="tile ${t.cls}">
       <span class="tile-val"><b>${t.v}</b>${t.u}</span>
       <span class="tile-label">${esc(t.label)}</span>
-      ${t.sub ? `<span class="tile-sub">${esc(t.sub)}</span>` : ""}
-    </div>`).join("");
+    </div>`).join("") + `</div>`;
 
   document.getElementById("bento").innerHTML = ring + tileHtml;
   // 링 애니메이션

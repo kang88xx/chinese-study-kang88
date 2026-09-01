@@ -155,7 +155,7 @@ main {
 }
 
 /* ================= 페이지 헤더 ================= */
-.page-head { display: flex; flex-direction: column; gap: 12px; padding: 12px 0 20px; }
+.page-head { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 16px; }
 .page-head h1 {
   margin: 0; font-size: 22px; font-weight: 400; letter-spacing: -.2px;
   color: var(--on-surface);
@@ -188,7 +188,7 @@ main {
   padding: 14px 16px 14px 20px;
   background: var(--blue-soft);
   border-radius: var(--r-lg);
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 .banner-icon { color: var(--blue); display: grid; place-items: center; }
 .banner-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -220,7 +220,7 @@ main {
 /* ================= 섹션 헤더 ================= */
 .section-head {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 32px 0 14px;
+  margin: 24px 0 12px;
 }
 .section-head h2 {
   margin: 0; font-size: 18px; font-weight: 500; letter-spacing: -.1px;
@@ -232,54 +232,52 @@ main {
   max-width: 80ch;
 }
 
-/* ================= 벤토 (대시보드) ================= */
-.bento {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
+/* ================= 요약 스트립 (대시보드) ================= */
+.bento { display: flex; gap: 12px; align-items: stretch; }
+
 .bento-ring {
-  grid-column: span 2; grid-row: span 2;
+  flex: 0 0 300px;
   background: var(--surface-2);
   border-radius: var(--r-xl);
-  padding: 24px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  padding: 16px 20px;
+  display: flex; flex-direction: row; align-items: center; gap: 18px;
 }
-.ring { position: relative; width: 200px; max-width: 100%; }
+.ring { position: relative; width: 112px; flex: 0 0 112px; }
 .ring svg { width: 100%; height: auto; display: block; }
-.ring-track { fill: none; stroke: #ffffff; stroke-width: 18; }
+.ring-track { fill: none; stroke: #ffffff; stroke-width: 16; }
 .ring-fill {
-  fill: none; stroke: var(--blue); stroke-width: 18; stroke-linecap: round;
+  fill: none; stroke: var(--blue); stroke-width: 16; stroke-linecap: round;
   transition: stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1);
 }
 .ring-center {
   position: absolute; inset: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.ring-center b { font-size: 40px; font-weight: 400; line-height: 1.1; }
-.ring-center span { font-size: 13px; color: var(--on-surface-3); }
+.ring-center b { font-size: 26px; font-weight: 400; line-height: 1.05; }
+.ring-center span { font-size: 11px; color: var(--on-surface-3); }
 .ring-center em {
-  margin-top: 6px; font-style: normal; font-size: 13px; font-weight: 500;
+  margin-top: 3px; font-style: normal; font-size: 11px; font-weight: 500;
   color: var(--blue); background: var(--blue-cont);
-  padding: 2px 10px; border-radius: 999px;
+  padding: 0 8px; border-radius: 999px;
 }
-.bento-ring-meta { text-align: center; }
-.bento-ring-title { margin: 0; font-size: 15px; font-weight: 500; }
-.bento-ring-sub { margin: 2px 0 0; font-size: 13px; color: var(--on-surface-3); }
+.bento-ring-meta { min-width: 0; }
+.bento-ring-title { margin: 0; font-size: 14px; font-weight: 500; }
+.bento-ring-sub { margin: 2px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--on-surface-3); }
 .bento-ring-sub b { color: var(--on-surface-2); }
 
+.stat-row {
+  flex: 1; min-width: 0;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+}
 .tile {
   background: var(--surface-2);
-  border-radius: var(--r-xl);
-  padding: 20px 22px;
-  display: flex; flex-direction: column; gap: 2px;
-  min-height: 108px; justify-content: center;
+  border-radius: var(--r-lg);
+  padding: 14px 14px 12px;
+  display: flex; flex-direction: column; justify-content: center; gap: 0;
 }
-.tile.wide { grid-column: span 2; }
-.tile-val { font-size: 15px; color: var(--on-surface-3); }
-.tile-val b { font-size: 32px; font-weight: 400; color: var(--on-surface); margin-right: 3px; }
-.tile-label { font-size: 13.5px; font-weight: 500; }
-.tile-sub { font-size: 12.5px; color: var(--on-surface-3); }
+.tile-val { font-size: 12px; color: var(--on-surface-3); line-height: 1.2; }
+.tile-val b { font-size: 26px; font-weight: 400; color: var(--on-surface); margin-right: 2px; }
+.tile-label { font-size: 12.5px; font-weight: 500; color: var(--on-surface-2); }
 
 .t-att   { background: var(--blue-soft); }
 .t-att   .tile-val b, .t-att .tile-label { color: var(--blue); }
@@ -544,8 +542,9 @@ footer {
   .banner .btn { margin-left: auto; }
   .banner-text { flex: 1 1 200px; }
 
-  .bento { grid-template-columns: repeat(2, 1fr); }
-  .bento-ring { grid-column: span 2; }
+  .bento { flex-direction: column; }
+  .bento-ring { flex: none; }
+  .stat-row { grid-template-columns: repeat(3, 1fr); }
   .lessons-layout { grid-template-columns: 1fr; }
   .lessons-side { position: static; }
   .chips.vertical { flex-direction: row; flex-wrap: wrap; }
