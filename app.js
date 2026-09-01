@@ -15,7 +15,7 @@ function route() {
 window.addEventListener("hashchange", route);
 
 /* ===== 대시보드 ===== */
-const CURRENT_MONTH = "08"; // 최신 기록 월 (강조 표시)
+const CURRENT_MONTH = "09"; // 최신 기록 월 (강조 표시)
 
 function renderDashboard() {
   document.getElementById("p-period").textContent = "수강기간 " + PROGRESS.start + " ~ " + PROGRESS.end;
