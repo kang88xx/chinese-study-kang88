@@ -126,15 +126,19 @@ function renderDashboard() {
     for (let d = 1; d <= mo.days; d++) {
       const wd = (mo.blanks + d - 1) % 7;
       const dcls = wd === 0 ? "d sun" : wd === 6 ? "d sat" : "d";
-      let cls = "day", title = "";
-      if (mo.att[d] !== undefined) { cls += " att"; title = `출석 · ${mo.att[d]}회차`; }
-      else if (mo.abs.includes(d)) { cls += " abs"; title = "결석"; }
-      else if (mo.cancel.includes(d)) { cls += " cancel"; title = "휴강"; }
-      else if (mo.pp.includes(d)) { cls += " pp"; title = "일반연기"; }
-      else if (mo.rp.includes(d)) { cls += " rp"; title = "정규연기"; }
+      let cls = "day", title = "", state = "";
+      if (mo.att[d] !== undefined) { cls += " att"; state = "att"; title = `출석 · ${mo.att[d]}회차`; }
+      else if (mo.abs.includes(d)) { cls += " abs"; state = "abs"; title = "결석"; }
+      else if (mo.cancel.includes(d)) { cls += " cancel"; state = "cancel"; title = "휴강"; }
+      else if (mo.pp.includes(d)) { cls += " pp"; state = "pp"; title = "일반연기"; }
+      else if (mo.rp.includes(d)) { cls += " rp"; state = "rp"; title = "정규연기"; }
       const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
       const t = title ? ` title="${mo.name} ${d}일 — ${title}"` : "";
-      cells += `<div class="${cls}"${t}><span class="${dcls}">${d}</span>${startMark}</div>`;
+      const data = state
+        ? ` role="button" tabindex="0" data-state="${state}" data-key="${mo.key}" data-day="${d}"` +
+          (state === "att" ? ` data-n="${mo.att[d]}"` : "")
+        : "";
+      cells += `<div class="${cls}"${t}${data}><span class="${dcls}">${d}</span>${startMark}</div>`;
     }
     // 월 요약 칩
     const miss = mo.abs.length, pp = mo.pp.length + mo.rp.length, cxl = mo.cancel.length;
@@ -293,6 +297,84 @@ function renderFixes() {
     </div>`
   ).join("");
 }
+
+/* ===== 수업 상세 모달 ===== */
+const STATE_LABEL = { att: "출석", abs: "결석", cancel: "휴강", pp: "일반연기", rp: "정규연기" };
+const modal = document.getElementById("lesson-modal");
+let modalOpener = null;
+
+function lessonItemsHtml(l) {
+  const items = l.items.map(it => {
+    let h = `<div class="sent">`;
+    if (it.gr) h += `<span class="gr">${esc(it.gr)}</span>`;
+    if (it.fix) h += `<span class="zh"><span class="bad">${esc(it.fix.bad)}</span> → <span class="good">${esc(it.fix.good)}</span></span>`;
+    else if (it.zh && it.zh !== "—") h += `<span class="zh">${esc(it.zh)}</span>`;
+    if (it.py) h += `<span class="py">${esc(it.py)}</span>`;
+    if (it.ko) h += `<span class="ko">${esc(it.ko)}</span>`;
+    return h + `</div>`;
+  }).join("");
+  const words = l.words.length
+    ? `<div class="words">${l.words.map(w => {
+        const sp = w.indexOf(" ");
+        return `<span><b>${esc(w.slice(0, sp))}</b>${esc(w.slice(sp + 1))}</span>`;
+      }).join("")}</div>`
+    : "";
+  return items + words;
+}
+
+function openDayModal(cell) {
+  const state = cell.dataset.state;
+  const key = cell.dataset.key, day = Number(cell.dataset.day);
+  const mo = CAL.find(c => c.key === key);
+  const n = cell.dataset.n ? Number(cell.dataset.n) : null;
+  const lesson = n ? LESSONS.find(l => l.n === n) : null;
+
+  document.getElementById("modal-eyebrow").textContent =
+    `${mo.name} ${day}일 · ${STATE_LABEL[state]}${n ? ` · ${n}회차` : ""}`;
+  document.getElementById("modal-title").textContent =
+    lesson ? lesson.theme : STATE_LABEL[state] + "한 날입니다";
+
+  const body = document.getElementById("modal-body");
+  const link = document.getElementById("modal-link");
+  if (lesson) {
+    body.innerHTML = `<p class="modal-meta">강사평 수신일 ${lesson.date} (${lesson.day}) · 진도 ${lesson.pct}%</p>` + lessonItemsHtml(lesson);
+    link.hidden = false;
+    link.onclick = () => { closeModal(); lessonQuery = lesson.date; document.getElementById("lesson-search").value = lesson.date; renderLessons(); };
+  } else if (state === "att") {
+    body.innerHTML = `<p class="modal-empty">이 날의 강사평 내용은 아직 정리되지 않았습니다.</p>`;
+    link.hidden = true;
+  } else {
+    const why = { abs: "결석 처리된 날입니다. 회차는 올라가지 않습니다.",
+                  cancel: "센터 휴강일입니다. 그만큼 수강 종료일이 뒤로 밀립니다.",
+                  pp: "일반연기한 날입니다. 그만큼 수강 종료일이 뒤로 밀립니다.",
+                  rp: "정규연기한 날입니다. 그만큼 수강 종료일이 뒤로 밀립니다." };
+    body.innerHTML = `<p class="modal-empty">${why[state]}</p>`;
+    link.hidden = true;
+  }
+
+  modalOpener = cell;
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+  modal.querySelector(".icon-btn").focus();
+}
+
+function closeModal() {
+  modal.hidden = true;
+  document.body.style.overflow = "";
+  if (modalOpener) { modalOpener.focus(); modalOpener = null; }
+}
+
+document.getElementById("cals").addEventListener("click", e => {
+  const cell = e.target.closest(".day[data-state]");
+  if (cell) openDayModal(cell);
+});
+document.getElementById("cals").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const cell = e.target.closest(".day[data-state]");
+  if (cell) { e.preventDefault(); openDayModal(cell); }
+});
+modal.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
 
 /* ===== 초기화 ===== */
 renderDashboard();
