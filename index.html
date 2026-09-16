@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>电话汉语 학습장 — kang88</title>
 <meta name="description" content="전화중국어 수업 기록: 진도·출석 달력·수업별 어법·누적 단어장·교정 노트">
 <meta name="theme-color" content="#ffffff">
@@ -15,16 +15,18 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+<noscript><p class="noscript-note">학습 기록을 보려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
 
 <header class="appbar">
   <a class="brand" href="#home">
     <span class="brand-mark" aria-hidden="true">汉</span>
-    <span class="brand-name">电话汉语 <b>학습장</b></span>
+    <span class="brand-name"><span lang="zh-CN">电话汉语</span> <b>학습장</b></span>
   </a>
 
   <div class="searchbar">
     <i class="mi" aria-hidden="true">search</i>
-    <input id="global-search" type="search" placeholder="문장 · 단어 · 주제 검색" autocomplete="off" aria-label="전체 검색">
+    <input id="global-search" type="search" placeholder="수업의 문장 · 단어 · 주제 검색" autocomplete="off" aria-label="수업 전체 검색" aria-controls="lesson-list">
   </div>
 
   <div class="appbar-right">
@@ -36,22 +38,22 @@
 <div class="shell">
 
   <nav class="rail" aria-label="주요 메뉴">
-    <a href="#home" data-tab="home"><span class="rail-icon"><i class="mi">space_dashboard</i></span><span class="rail-label">대시보드</span></a>
-    <a href="#lessons" data-tab="lessons"><span class="rail-icon"><i class="mi">menu_book</i></span><span class="rail-label">수업 기록</span></a>
-    <a href="#vocab" data-tab="vocab"><span class="rail-icon"><i class="mi">style</i></span><span class="rail-label">단어장</span></a>
-    <a href="#fix" data-tab="fix"><span class="rail-icon"><i class="mi">edit_note</i></span><span class="rail-label">교정 노트</span></a>
+    <a href="#home" data-tab="home"><span class="rail-icon"><i class="mi" aria-hidden="true">space_dashboard</i></span><span class="rail-label">대시보드</span></a>
+    <a href="#lessons" data-tab="lessons"><span class="rail-icon"><i class="mi" aria-hidden="true">menu_book</i></span><span class="rail-label">수업 기록</span></a>
+    <a href="#vocab" data-tab="vocab"><span class="rail-icon"><i class="mi" aria-hidden="true">style</i></span><span class="rail-label">단어장</span></a>
+    <a href="#fix" data-tab="fix"><span class="rail-icon"><i class="mi" aria-hidden="true">edit_note</i></span><span class="rail-label">교정 노트</span></a>
   </nav>
 
-  <main>
+  <main id="main-content" tabindex="-1">
     <!-- ===== 대시보드 ===== -->
     <section id="view-home" class="view">
       <div class="page-head">
-        <h1 id="today-title">오늘</h1>
+        <h1 id="today-title" tabindex="-1">최근 수업</h1>
         <div class="week-strip" id="week-strip"></div>
       </div>
 
       <div class="banner">
-        <span class="banner-icon"><i class="mi">verified_user</i></span>
+        <span class="banner-icon"><i class="mi" aria-hidden="true">verified_user</i></span>
         <div class="banner-text">
           <b>공식 출석부 기준으로 기록됩니다</b>
           <span>중국교육센터 홈페이지 출석부를 그대로 옮겼습니다. 1회 = 2026-04-07 개강일이고, 출석 회차가 곧 진도예요.</span>
@@ -73,28 +75,28 @@
         <span class="l-pp"><i></i>일반연기</span>
         <span class="l-rp"><i></i>정규연기</span>
       </div>
-      <p class="note">결석·휴강·연기한 만큼 수강 종료일이 뒤로 밀려 2026-10-26까지 연장됐습니다.</p>
+      <p class="note" id="course-note"></p>
     </section>
 
     <!-- ===== 수업 기록 ===== -->
     <section id="view-lessons" class="view" hidden>
       <div class="page-head">
-        <h1>수업 기록</h1>
-        <p class="page-sub">강사평 메일에서 옮긴 수업 내용입니다. 카드의 날짜는 <b>강사평 수신일</b> 기준이라 실제 출석일과 하루 이틀 차이날 수 있고, <b>N회</b>가 정확한 회차예요.</p>
+        <h1 tabindex="-1">수업 기록</h1>
+        <p class="page-sub">강사평 메일에서 정리한 수업 내용입니다. 카드의 <b>수업 기록일</b>은 공식 출석일과 다를 수 있어요. 달력과 비교할 때는 <b>회차</b>를 확인해 주세요.</p>
       </div>
       <div class="lessons-layout">
         <aside class="lessons-side">
           <div class="side-panel">
             <div class="side-search">
               <i class="mi" aria-hidden="true">search</i>
-              <input type="search" id="lesson-search" placeholder="검색" autocomplete="off">
+              <input type="search" id="lesson-search" placeholder="선택한 기간에서 검색" autocomplete="off" aria-label="수업 기록 검색" aria-controls="lesson-list">
             </div>
             <div class="chips vertical" id="month-chips"></div>
             <div class="side-stats" id="side-stats"></div>
           </div>
         </aside>
         <div class="lessons-main">
-          <p class="result-count" id="lesson-count"></p>
+          <p class="result-count" id="lesson-count" role="status" aria-live="polite" aria-atomic="true"></p>
           <div id="lesson-list" class="lesson-list"></div>
         </div>
       </div>
@@ -103,7 +105,7 @@
     <!-- ===== 단어장 ===== -->
     <section id="view-vocab" class="view" hidden>
       <div class="page-head">
-        <h1>단어장</h1>
+        <h1 tabindex="-1">단어장</h1>
         <p class="page-sub">누적 <b id="quiz-total"></b>개 단어. 플래시카드로 먼저 떠올려 보고, 아래 표에서 찾아보세요.</p>
       </div>
 
@@ -113,13 +115,13 @@
           <h2 class="quiz-title">한자를 보고 뜻을 떠올려 보세요</h2>
           <p class="quiz-desc">무작위로 출제됩니다. 카드를 누르면 병음과 뜻이 나옵니다.</p>
           <div class="quiz-actions">
-            <button id="quiz-reveal" class="btn btn-filled">뜻 보기</button>
+            <button id="quiz-reveal" class="btn btn-filled" aria-controls="quiz-answer" aria-expanded="false">뜻 보기</button>
             <button id="quiz-next" class="btn btn-tonal">다음 단어</button>
           </div>
         </div>
         <div class="quiz-stage">
-          <button class="quiz-word" id="quiz-word" aria-live="polite"></button>
-          <div class="quiz-answer" id="quiz-answer" hidden></div>
+          <button class="quiz-word" id="quiz-word" lang="zh-CN" aria-live="polite" aria-controls="quiz-answer" aria-expanded="false"></button>
+          <div class="quiz-answer" id="quiz-answer" aria-live="polite" aria-atomic="true" hidden></div>
         </div>
       </div>
 
@@ -127,13 +129,13 @@
         <h2>누적 단어장</h2>
         <div class="side-search inline">
           <i class="mi" aria-hidden="true">search</i>
-          <input type="search" id="vocab-search" placeholder="한자 · 병음 · 뜻" autocomplete="off">
+          <input type="search" id="vocab-search" placeholder="한자 · 병음 · 뜻" autocomplete="off" aria-label="단어장 검색" aria-controls="vocab-body">
         </div>
-        <span class="result-count" id="vocab-count"></span>
+        <span class="result-count" id="vocab-count" role="status" aria-live="polite" aria-atomic="true"></span>
       </div>
-      <div class="tablewrap">
+      <div class="tablewrap" tabindex="0" role="region" aria-label="누적 단어 목록">
         <table>
-          <thead><tr><th>날짜</th><th>중국어</th><th>병음</th><th>뜻</th></tr></thead>
+          <thead><tr><th scope="col">날짜</th><th scope="col">중국어</th><th scope="col">병음</th><th scope="col">뜻</th></tr></thead>
           <tbody id="vocab-body"></tbody>
         </table>
       </div>
@@ -142,7 +144,7 @@
     <!-- ===== 교정 노트 ===== -->
     <section id="view-fix" class="view" hidden>
       <div class="page-head">
-        <h1>교정 노트</h1>
+        <h1 tabindex="-1">교정 노트</h1>
         <p class="page-sub">강사가 수업 중 바로잡아 준 표현들 — 틀린 문장과 맞는 문장을 나란히. 시험 전 여기만 훑어도 됩니다.</p>
       </div>
       <div id="fix-list" class="fix-list"></div>
@@ -163,9 +165,9 @@
         <p class="modal-eyebrow" id="modal-eyebrow"></p>
         <h2 class="modal-title" id="modal-title"></h2>
       </div>
-      <button class="icon-btn" data-close aria-label="닫기"><i class="mi">close</i></button>
+      <button class="icon-btn" data-close aria-label="닫기"><i class="mi" aria-hidden="true">close</i></button>
     </div>
-    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-body" id="modal-body" tabindex="0" role="region" aria-label="수업 상세 내용"></div>
     <div class="modal-foot">
       <a class="btn btn-quiet" id="modal-link" href="#lessons">수업 기록에서 보기</a>
       <button class="btn btn-tonal" data-close>닫기</button>

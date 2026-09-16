@@ -31,7 +31,7 @@
   --red:           #b3261e;
   --red-cont:      #f9dedc;
   --red-soft:      #fce8e6;
-  --yellow:        #a8710a;
+  --yellow:        #8a5a00;
   --yellow-cont:   #ffe8a3;
   --yellow-soft:   #fef7e0;
   --purple:        #6b3fa0;
@@ -51,7 +51,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: auto; scroll-padding-top: calc(var(--appbar-h) + 16px); }
 
 body {
   margin: 0;
@@ -68,6 +68,19 @@ body {
 a { color: inherit; text-decoration: none; }
 b, strong { font-weight: 500; }
 
+:where(a, button, input, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.skip-link {
+  position: fixed; top: 8px; left: 12px; z-index: 100;
+  padding: 10px 16px; border-radius: var(--r-sm);
+  background: var(--blue); color: white;
+  transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+.noscript-note { margin: 16px; padding: 16px; background: var(--yellow-soft); }
+
 .mi {
   font-family: "Material Symbols Outlined";
   font-weight: normal; font-style: normal;
@@ -83,13 +96,13 @@ b, strong { font-weight: 500; }
   position: sticky; top: 0; z-index: 30;
   height: var(--appbar-h);
   display: grid;
-  grid-template-columns: 1fr minmax(0, 520px) 1fr;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
   align-items: center;
   gap: 16px;
   padding: 0 16px;
   background: var(--bg);
 }
-.brand { display: inline-flex; align-items: center; gap: 10px; justify-self: start; }
+.brand { display: inline-flex; align-items: center; gap: 10px; justify-self: start; white-space: nowrap; }
 .brand-mark {
   width: 36px; height: 36px; border-radius: 10px;
   background: var(--blue); color: #fff;
@@ -113,7 +126,6 @@ b, strong { font-weight: 500; }
   font: inherit; font-size: 14px; color: var(--on-surface);
 }
 .searchbar input::placeholder { color: var(--on-surface-3); }
-input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 .appbar-right { justify-self: end; display: flex; align-items: center; gap: 8px; }
 .pill {
@@ -161,6 +173,7 @@ main {
   margin: 0; font-size: 22px; font-weight: 400; letter-spacing: -.2px;
   color: var(--on-surface);
 }
+.page-head h1:focus, main:focus { outline: none; }
 .page-sub { margin: 0; max-width: 72ch; color: var(--on-surface-3); font-size: 13.5px; }
 .page-sub b { color: var(--on-surface-2); }
 
@@ -357,7 +370,8 @@ main {
 .l-rp i     { background: var(--yellow-soft); box-shadow: inset 0 0 0 1.5px var(--yellow); }
 
 /* ================= 수업 기록 ================= */
-.lessons-layout { display: grid; grid-template-columns: 232px 1fr; gap: 24px; align-items: start; }
+.lessons-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 24px; align-items: start; }
+.lessons-side, .lessons-main, .side-panel { min-width: 0; }
 .lessons-side { position: sticky; top: calc(var(--appbar-h) + 12px); }
 .side-panel {
   background: var(--surface-1);
@@ -434,6 +448,7 @@ summary .theme { color: var(--on-surface-3); font-size: 13px; }
 
 .lbody { border-top: 1px solid var(--outline-soft); padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 16px; }
 .sent { display: flex; flex-direction: column; gap: 3px; }
+.sent, .words, .fix-item { overflow-wrap: anywhere; min-width: 0; }
 .sent .gr {
   align-self: flex-start; font-size: 12px; font-weight: 500;
   color: var(--blue); background: var(--blue-soft);
@@ -473,9 +488,11 @@ mark { background: var(--yellow-cont); color: inherit; border-radius: 3px; paddi
 .quiz-word {
   border: 0; background: none; cursor: pointer;
   font-family: "Noto Sans SC", serif; font-size: 48px; font-weight: 500;
-  color: var(--on-surface); line-height: 1.2; padding: 0;
+  color: var(--on-surface); line-height: 1.35; padding: 8px;
+  max-width: 100%; overflow-wrap: anywhere;
 }
-.quiz-answer { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.quiz-answer { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; overflow-wrap: anywhere; }
+.quiz-side, .quiz-stage { min-width: 0; }
 .quiz-answer .py { color: var(--on-surface-3); font-size: 14px; }
 .quiz-answer .ko { font-size: 16px; font-weight: 500; }
 .quiz-answer .src { font-size: 12px; color: var(--on-surface-3); }
@@ -552,6 +569,7 @@ footer {
 .modal-body {
   padding: 4px 24px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch;
   display: flex; flex-direction: column; gap: 16px;
+  min-height: 0; overscroll-behavior: contain;
 }
 .modal-meta { margin: 0; font-size: 12.5px; color: var(--on-surface-3); }
 .modal-empty { margin: 8px 0 12px; font-size: 14px; color: var(--on-surface-2); }
@@ -563,7 +581,14 @@ footer {
 }
 
 /* ================= 반응형 ================= */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .appbar-right .pill-quiet { display: none; }
+  .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tile { padding: 10px 14px; }
+}
+
 @media (max-width: 900px) {
+  :root { --appbar-h: 96px; }
   /* --- 앱바: 2줄 구성, 높이 축소 --- */
   .appbar {
     grid-template-columns: 1fr auto;
@@ -628,9 +653,9 @@ footer {
   .legend { gap: 4px 12px; font-size: 12px; }
 
   /* --- 수업 기록 --- */
-  .lessons-layout { grid-template-columns: 1fr; gap: 16px; }
+  .lessons-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .lessons-side { position: static; }
-  .side-panel { padding: 12px; gap: 10px; background: none; }
+  .side-panel { padding: 0; gap: 10px; background: none; }
   .side-search { background: var(--surface-2); border-color: transparent; }
   .side-search.inline { width: 100%; }
   .chips.vertical {
@@ -639,7 +664,7 @@ footer {
     scrollbar-width: none; -ms-overflow-style: none;
   }
   .chips.vertical::-webkit-scrollbar { display: none; }
-  .chips button { white-space: nowrap; padding: 7px 14px; background: var(--surface-2); }
+  .chips button { white-space: nowrap; padding: 7px 14px; min-height: 44px; background: var(--surface-2); }
   .side-stats { display: flex; gap: 16px; border-top: 1px solid var(--outline-soft); padding-top: 10px; }
   .side-stats-title { display: none; }
   .side-stat { gap: 6px; }
@@ -657,11 +682,18 @@ footer {
   .quiz-word { font-size: 40px; }
   .quiz-actions .btn { flex: 1; padding: 0 12px; }
   .tablewrap { max-height: none; }
-  table { min-width: 0; }
+  table { min-width: 0; table-layout: fixed; }
   th, td { padding: 9px 10px; }
   thead th:first-child, td.date { display: none; }
-  td.zh { font-size: 16px; }
+  thead th:nth-child(2) { width: 27%; }
+  thead th:nth-child(3) { width: 29%; }
+  thead th:nth-child(4) { width: 44%; }
+  td { overflow-wrap: anywhere; }
+  td.zh { font-size: 16px; white-space: normal; }
   td.py { font-size: 12px; white-space: normal; }
+  .searchbar input, .side-search input { font-size: 16px; }
+  .btn { min-height: 44px; }
+  .icon-btn { width: 44px; height: 44px; flex-basis: 44px; }
 
   /* --- 교정 노트 --- */
   .fix-list { grid-template-columns: 1fr; }
@@ -671,7 +703,7 @@ footer {
   /* --- 모달: 바텀 시트 --- */
   .modal { padding: 0; place-items: end stretch; }
   .modal-card {
-    width: 100%; max-height: 88vh;
+    width: 100%; max-height: 88vh; max-height: 88dvh;
     border-radius: var(--r-xl) var(--r-xl) 0 0;
     animation: sheet-in .22s cubic-bezier(.2,.8,.2,1);
   }
@@ -681,6 +713,22 @@ footer {
   .modal-foot { padding: 10px 14px calc(16px + env(safe-area-inset-bottom)); }
 
   footer { margin-top: 32px; font-size: 12px; }
+}
+
+.searchbar:focus-within, .side-search:focus-within {
+  outline: 2px solid var(--blue); outline-offset: 2px;
+}
+.empty-state {
+  padding: 32px 20px; text-align: center;
+  color: var(--on-surface-3); background: var(--surface-1);
+  border: 1px dashed var(--outline); border-radius: var(--r-lg);
+}
+.empty-state p { margin: 0 0 12px; }
+.vocab-empty { padding: 28px 16px; text-align: center; color: var(--on-surface-3); }
+.vocab-empty p { margin: 0 0 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 @keyframes sheet-in { from { transform: translateY(24px); opacity: .6; } }
