@@ -385,7 +385,7 @@ function openDayModal(cell) {
   const body = document.getElementById("modal-body");
   const link = document.getElementById("modal-link");
   if (lesson) {
-    body.innerHTML = `<p class="modal-meta">강사평 수신일 ${lesson.date} (${lesson.day}) · 진도 ${lesson.pct}%</p>` + lessonItemsHtml(lesson);
+    body.innerHTML = `<p class="modal-meta">수업 기록일 ${lesson.date} (${lesson.day}) · 진도 ${lesson.pct}%</p>` + lessonItemsHtml(lesson);
     link.hidden = false;
     link.onclick = () => {
       closeModal(false);
