@@ -200,13 +200,13 @@ function renderLessons() {
     if (mon !== curMonth) {
       curMonth = mon;
       const mm = l.date.slice(5, 7);
-      const monthLessons = LESSONS.filter(x => x.date.slice(0, 7) === mon).length;
+      const monthLessons = list.filter(x => x.date.slice(0, 7) === mon).length;
       html += `<p class="month-head">${mon.slice(0, 4)}년 ${Number(mm)}월 · 수업 ${monthLessons}회</p>`;
     }
     const open = q || list.length <= 3 ? " open" : "";
     const items = l.items.map(it => {
       let s = `<div class="sent">`;
-      if (it.gr) s += `<span class="gr hanzi" lang="zh-CN">${highlight(it.gr, q)}</span>`;
+      if (it.gr) s += `<span class="gr hanzi">${highlight(it.gr, q)}</span>`;
       if (it.fix) {
         s += `<span class="zh" lang="zh-CN"><span class="bad">${highlight(it.fix.bad, q)}</span> → <span class="good">${highlight(it.fix.good, q)}</span></span>`;
       } else if (it.zh && it.zh !== "—") {
@@ -242,7 +242,7 @@ function renderSideStats() {
   const fixes = scope.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const words = scope.reduce((a, l) => a + l.words.length, 0);
   const title = lessonMonth === "all" ? "전체 기간" : monthName(lessonMonth);
-  const rows = [["수업", lessons + "회"], ["단어", words + "개"], ["교정", fixes + "건"]];
+  const rows = [["수업 기록", lessons + "회"], ["단어 기록", words + "개"], ["교정", fixes + "건"]];
   document.getElementById("side-stats").innerHTML =
     `<p class="side-stats-title">${esc(title)}</p>` +
     rows.map(([k, v]) => `<div class="side-stat"><span>${k}</span><b>${v}</b></div>`).join("");
@@ -293,7 +293,7 @@ function renderVocab(q = "") {
   document.getElementById("vocab-count").textContent = `${list.length} / ${VOCAB.length}개`;
   document.getElementById("vocab-body").innerHTML = list.map(v =>
     `<tr><td class="date">${esc(v[0])}</td><td class="zh" lang="zh-CN">${highlight(v[1], q)}</td><td class="py">${highlight(v[2], q)}</td><td>${highlight(v[3], q)}</td></tr>`
-  ).join("");
+  ).join("") || `<tr><td colspan="4" class="vocab-empty"><p>일치하는 단어가 없습니다. 한자, 병음 또는 뜻으로 다시 검색해 보세요.</p><button class="btn btn-tonal" data-reset-vocab>검색 초기화</button></td></tr>`;
 }
 
 /* 플래시카드 */
@@ -354,7 +354,7 @@ let modalOpener = null;
 function lessonItemsHtml(l) {
   const items = l.items.map(it => {
     let h = `<div class="sent">`;
-    if (it.gr) h += `<span class="gr" lang="zh-CN">${esc(it.gr)}</span>`;
+    if (it.gr) h += `<span class="gr">${esc(it.gr)}</span>`;
     if (it.fix) h += `<span class="zh" lang="zh-CN"><span class="bad">${esc(it.fix.bad)}</span> → <span class="good">${esc(it.fix.good)}</span></span>`;
     else if (it.zh && it.zh !== "—") h += `<span class="zh" lang="zh-CN">${esc(it.zh)}</span>`;
     if (it.py) h += `<span class="py">${esc(it.py)}</span>`;
@@ -460,6 +460,13 @@ document.getElementById("quiz-reveal").addEventListener("click", quizReveal);
 document.getElementById("quiz-word").addEventListener("click", quizReveal);
 document.getElementById("quiz-next").addEventListener("click", quizNext);
 document.getElementById("vocab-search").addEventListener("input", e => renderVocab(e.target.value.trim()));
+document.getElementById("vocab-body").addEventListener("click", e => {
+  if (!e.target.closest("[data-reset-vocab]")) return;
+  const search = document.getElementById("vocab-search");
+  search.value = "";
+  renderVocab();
+  search.focus();
+});
 document.getElementById("global-search").addEventListener("input", e => {
   setLessonSearch(e.target.value, true);
   if (lessonQuery && location.hash !== "#lessons") location.hash = "#lessons";
