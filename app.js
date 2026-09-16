@@ -3,19 +3,29 @@ const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(
 
 /* ===== 라우팅 (해시 탭) ===== */
 const TABS = ["home", "lessons", "vocab", "fix"];
-function route() {
+function route(event) {
+  const wasModalOpen = !modal.hidden;
+  if (wasModalOpen) closeModal(false);
   const tab = TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   TABS.forEach(t => {
     document.getElementById("view-" + t).hidden = t !== tab;
     document.querySelectorAll(`.rail a[data-tab="${t}"]`)
-      .forEach(a => a.classList.toggle("active", t === tab));
+      .forEach(a => {
+        a.classList.toggle("active", t === tab);
+        if (t === tab) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      });
   });
+  if (tab === "home") renderWeekStrip();
+  if ((event || wasModalOpen) && document.activeElement !== document.getElementById("global-search")) {
+    document.querySelector(`#view-${tab} h1`).focus();
+  }
   window.scrollTo({ top: 0 });
 }
 window.addEventListener("hashchange", route);
 
 /* ===== 대시보드 ===== */
-const CURRENT_MONTH = "09"; // 최신 기록 월 (강조 표시)
+const CURRENT_MONTH = PROGRESS.updated.slice(5, 7); // 최신 기록 월 (강조 표시)
 
 /* 날짜 스트립 — 오른쪽 끝이 최신 기록일, 가로 폭이 허용하는 만큼 과거로 채움 */
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
@@ -34,6 +44,7 @@ function dayStatus(date) {
 }
 
 function renderWeekStrip() {
+  if (document.getElementById("view-home").hidden) return;
   const [y, m, d] = PROGRESS.updated.split("-").map(Number);
   const anchor = new Date(y, m - 1, d);
   const strip = document.getElementById("week-strip");
@@ -68,7 +79,8 @@ function renderDashboard() {
   document.getElementById("ab-progress").textContent = `${PROGRESS.done} / ${PROGRESS.total}회 · ${PROGRESS.pct}%`;
   document.getElementById("ab-updated").textContent = `수강기간 ${PROGRESS.start} ~ ${PROGRESS.end}`;
   document.getElementById("footer-updated").textContent = "마지막 갱신: " + PROGRESS.updated;
-  renderWeekStrip();
+  document.getElementById("course-note").textContent =
+    `휴강·연기로 조정된 수강 종료일은 ${PROGRESS.end}입니다. 결석은 출석 회차에 포함되지 않습니다.`;
 
   const fixCount = LESSONS.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const remain = PROGRESS.total - PROGRESS.done;
@@ -135,7 +147,7 @@ function renderDashboard() {
       const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
       const t = title ? ` title="${mo.name} ${d}일 — ${title}"` : "";
       const data = state
-        ? ` role="button" tabindex="0" data-state="${state}" data-key="${mo.key}" data-day="${d}"` +
+        ? ` role="button" tabindex="0" aria-label="${mo.name} ${d}일 · ${title}${mo.start === d ? " · 개강" : ""}" data-state="${state}" data-key="${mo.key}" data-day="${d}"` +
           (state === "att" ? ` data-n="${mo.att[d]}"` : "")
         : "";
       cells += `<div class="${cls}"${t}${data}><span class="${dcls}">${d}</span>${startMark}</div>`;
@@ -157,6 +169,7 @@ function renderDashboard() {
 
 /* ===== 수업 기록 ===== */
 const MONTH_NAMES = { "04": "4월 (개강)", "05": "5월", "06": "6월", "07": "7월", "08": "8월", "09": "9월" };
+const monthName = month => MONTH_NAMES[month] || `${Number(month)}월`;
 let lessonMonth = "all";
 let lessonQuery = "";
 
@@ -169,7 +182,7 @@ function highlight(text, q) {
 
 function lessonMatches(l, q) {
   if (!q) return true;
-  const hay = [l.date, l.theme, ...l.items.flatMap(i => [i.zh || "", i.ko || "", i.gr || "", i.fix ? i.fix.bad + i.fix.good : ""]), ...l.words];
+  const hay = [l.date, l.theme, String(l.n), ...l.items.flatMap(i => [i.zh || "", i.ko || "", i.py || "", i.gr || "", i.fix ? i.fix.bad + i.fix.good : ""]), ...l.words];
   return hay.some(s => s.toLowerCase().includes(q.toLowerCase()));
 }
 
@@ -193,30 +206,31 @@ function renderLessons() {
     const open = q || list.length <= 3 ? " open" : "";
     const items = l.items.map(it => {
       let s = `<div class="sent">`;
-      if (it.gr) s += `<span class="gr hanzi">${esc(it.gr)}</span>`;
+      if (it.gr) s += `<span class="gr hanzi" lang="zh-CN">${highlight(it.gr, q)}</span>`;
       if (it.fix) {
-        s += `<span class="zh"><span class="bad">${highlight(it.fix.bad, q)}</span> → <span class="good">${highlight(it.fix.good, q)}</span></span>`;
+        s += `<span class="zh" lang="zh-CN"><span class="bad">${highlight(it.fix.bad, q)}</span> → <span class="good">${highlight(it.fix.good, q)}</span></span>`;
       } else if (it.zh && it.zh !== "—") {
-        s += `<span class="zh">${highlight(it.zh, q)}</span>`;
+        s += `<span class="zh" lang="zh-CN">${highlight(it.zh, q)}</span>`;
       }
-      if (it.py) s += `<span class="py">${esc(it.py)}</span>`;
+      if (it.py) s += `<span class="py">${highlight(it.py, q)}</span>`;
       if (it.ko) s += `<span class="ko">${highlight(it.ko, q)}</span>`;
       return s + `</div>`;
     }).join("");
     const words = l.words.length
       ? `<div class="words">${l.words.map(w => {
-          const sp = w.indexOf(" ");
-          return `<span><b>${highlight(w.slice(0, sp), q)}</b>${highlight(w.slice(sp + 1), q)}</span>`;
+          const sp = w.search(/\s/);
+          return `<span><b lang="zh-CN">${highlight((sp < 0 ? w : w.slice(0, sp)), q)}</b>${highlight((sp < 0 ? "" : w.slice(sp).trimStart()), q)}</span>`;
         }).join("")}</div>`
       : "";
     const fixN = l.items.filter(i => i.fix).length;
     const badge = fixN ? `<span class="fix-badge">교정 ${fixN}</span>` : "";
     html += `<details class="lesson"${open}>
-      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${l.pct}%</span><span class="theme">${esc(l.theme)}</span>${badge}</summary>
+      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${l.pct}%</span><span class="theme">${highlight(l.theme, q)}</span>${badge}</summary>
       <div class="lbody">${items}${words}</div>
     </details>`;
   });
-  document.getElementById("lesson-list").innerHTML = html;
+  document.getElementById("lesson-list").innerHTML = html ||
+    `<div class="empty-state"><p>일치하는 수업이 없습니다. 검색어나 월을 바꿔 보세요.</p><button class="btn btn-tonal" data-reset-lessons>검색·필터 초기화</button></div>`;
   renderSideStats();
 }
 
@@ -227,28 +241,49 @@ function renderSideStats() {
   const lessons = scope.length;
   const fixes = scope.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const words = scope.reduce((a, l) => a + l.words.length, 0);
-  const title = lessonMonth === "all" ? "전체 기간" : MONTH_NAMES[lessonMonth];
+  const title = lessonMonth === "all" ? "전체 기간" : monthName(lessonMonth);
   const rows = [["수업", lessons + "회"], ["단어", words + "개"], ["교정", fixes + "건"]];
   document.getElementById("side-stats").innerHTML =
     `<p class="side-stats-title">${esc(title)}</p>` +
     rows.map(([k, v]) => `<div class="side-stat"><span>${k}</span><b>${v}</b></div>`).join("");
 }
 
+function updateMonthChips() {
+  document.querySelectorAll("#month-chips button").forEach(button => {
+    const selected = button.dataset.m === lessonMonth;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+}
+
+function setLessonSearch(query, allMonths = false) {
+  lessonQuery = query;
+  if (allMonths) lessonMonth = "all";
+  document.getElementById("lesson-search").value = query;
+  document.getElementById("global-search").value = query;
+  updateMonthChips();
+  renderLessons();
+}
+
 function setupLessonControls() {
+  document.getElementById("lesson-list").addEventListener("click", e => {
+    if (!e.target.closest("[data-reset-lessons]")) return;
+    setLessonSearch("", true);
+    document.getElementById("lesson-search").focus();
+  });
   const months = ["all", ...CAL.map(m => m.key)];
   document.getElementById("month-chips").innerHTML = months.map(m =>
-    `<button data-m="${m}" class="${m === "all" ? "active" : ""}">${m === "all" ? "전체" : MONTH_NAMES[m]}</button>`
+    `<button data-m="${m}" aria-pressed="${m === "all"}" class="${m === "all" ? "active" : ""}">${m === "all" ? "전체" : monthName(m)}</button>`
   ).join("");
   document.getElementById("month-chips").addEventListener("click", e => {
     const b = e.target.closest("button");
     if (!b) return;
     lessonMonth = b.dataset.m;
-    document.querySelectorAll("#month-chips button").forEach(x => x.classList.toggle("active", x === b));
+    updateMonthChips();
     renderLessons();
   });
   document.getElementById("lesson-search").addEventListener("input", e => {
-    lessonQuery = e.target.value;
-    renderLessons();
+    setLessonSearch(e.target.value);
   });
 }
 
@@ -257,7 +292,7 @@ function renderVocab(q = "") {
   const list = VOCAB.filter(v => !q || v.some(s => s.toLowerCase().includes(q.toLowerCase())));
   document.getElementById("vocab-count").textContent = `${list.length} / ${VOCAB.length}개`;
   document.getElementById("vocab-body").innerHTML = list.map(v =>
-    `<tr><td class="date">${esc(v[0])}</td><td class="zh">${highlight(v[1], q)}</td><td class="py">${highlight(v[2], q)}</td><td>${highlight(v[3], q)}</td></tr>`
+    `<tr><td class="date">${esc(v[0])}</td><td class="zh" lang="zh-CN">${highlight(v[1], q)}</td><td class="py">${highlight(v[2], q)}</td><td>${highlight(v[3], q)}</td></tr>`
   ).join("");
 }
 
@@ -265,6 +300,12 @@ function renderVocab(q = "") {
 document.getElementById("quiz-total").textContent = VOCAB.length;
 let quizIdx = -1;
 function quizNext() {
+  if (!VOCAB.length) {
+    document.getElementById("quiz-word").textContent = "등록된 단어가 없습니다";
+    ["quiz-word", "quiz-reveal", "quiz-next"].forEach(id => { document.getElementById(id).disabled = true; });
+    setQuizExpanded(false);
+    return;
+  }
   let i;
   do { i = Math.floor(Math.random() * VOCAB.length); } while (i === quizIdx && VOCAB.length > 1);
   quizIdx = i;
@@ -272,15 +313,22 @@ function quizNext() {
   const ans = document.getElementById("quiz-answer");
   ans.hidden = true;
   ans.innerHTML = "";
-  document.getElementById("quiz-reveal").hidden = false;
+  setQuizExpanded(false);
+}
+function setQuizExpanded(expanded) {
+  document.getElementById("quiz-answer").hidden = !expanded;
+  document.getElementById("quiz-reveal").textContent = expanded ? "뜻 숨기기" : "뜻 보기";
+  ["quiz-reveal", "quiz-word"].forEach(id => {
+    document.getElementById(id).setAttribute("aria-expanded", String(expanded));
+    document.getElementById(id).setAttribute("aria-controls", "quiz-answer");
+  });
 }
 function quizReveal() {
   if (quizIdx < 0) return;
   const v = VOCAB[quizIdx];
   const ans = document.getElementById("quiz-answer");
   ans.innerHTML = `<span class="py">${esc(v[2])}</span><span class="ko">${esc(v[3])}</span><span class="src">(${esc(v[0])} 수업)</span>`;
-  ans.hidden = false;
-  document.getElementById("quiz-reveal").hidden = true;
+  setQuizExpanded(ans.hidden);
 }
 
 /* ===== 교정 노트 ===== */
@@ -291,7 +339,7 @@ function renderFixes() {
   }));
   document.getElementById("fix-list").innerHTML = fixes.map(f =>
     `<div class="fix-item">
-      <div class="pair"><span class="bad">${esc(f.bad)}</span><span class="arrow">→</span><span class="good">${esc(f.good)}</span></div>
+      <div class="pair" lang="zh-CN"><span class="bad">${esc(f.bad)}</span><span class="arrow">→</span><span class="good">${esc(f.good)}</span></div>
       <div class="why">${esc(f.why)}</div>
       <div class="src">${esc(f.date)} · ${f.n}회 수업</div>
     </div>`
@@ -306,17 +354,17 @@ let modalOpener = null;
 function lessonItemsHtml(l) {
   const items = l.items.map(it => {
     let h = `<div class="sent">`;
-    if (it.gr) h += `<span class="gr">${esc(it.gr)}</span>`;
-    if (it.fix) h += `<span class="zh"><span class="bad">${esc(it.fix.bad)}</span> → <span class="good">${esc(it.fix.good)}</span></span>`;
-    else if (it.zh && it.zh !== "—") h += `<span class="zh">${esc(it.zh)}</span>`;
+    if (it.gr) h += `<span class="gr" lang="zh-CN">${esc(it.gr)}</span>`;
+    if (it.fix) h += `<span class="zh" lang="zh-CN"><span class="bad">${esc(it.fix.bad)}</span> → <span class="good">${esc(it.fix.good)}</span></span>`;
+    else if (it.zh && it.zh !== "—") h += `<span class="zh" lang="zh-CN">${esc(it.zh)}</span>`;
     if (it.py) h += `<span class="py">${esc(it.py)}</span>`;
     if (it.ko) h += `<span class="ko">${esc(it.ko)}</span>`;
     return h + `</div>`;
   }).join("");
   const words = l.words.length
     ? `<div class="words">${l.words.map(w => {
-        const sp = w.indexOf(" ");
-        return `<span><b>${esc(w.slice(0, sp))}</b>${esc(w.slice(sp + 1))}</span>`;
+        const sp = w.search(/\s/);
+        return `<span><b lang="zh-CN">${esc((sp < 0 ? w : w.slice(0, sp)))}</b>${esc((sp < 0 ? "" : w.slice(sp).trimStart()))}</span>`;
       }).join("")}</div>`
     : "";
   return items + words;
@@ -339,7 +387,11 @@ function openDayModal(cell) {
   if (lesson) {
     body.innerHTML = `<p class="modal-meta">강사평 수신일 ${lesson.date} (${lesson.day}) · 진도 ${lesson.pct}%</p>` + lessonItemsHtml(lesson);
     link.hidden = false;
-    link.onclick = () => { closeModal(); lessonQuery = lesson.date; document.getElementById("lesson-search").value = lesson.date; renderLessons(); };
+    link.onclick = () => {
+      closeModal(false);
+      setLessonSearch(lesson.date, true);
+      if (location.hash === "#lessons") route({ type: "modal-link" });
+    };
   } else if (state === "att") {
     body.innerHTML = `<p class="modal-empty">이 날의 강사평 내용은 아직 정리되지 않았습니다.</p>`;
     link.hidden = true;
@@ -354,14 +406,17 @@ function openDayModal(cell) {
 
   modalOpener = cell;
   modal.hidden = false;
+  document.querySelectorAll(".appbar, .shell").forEach(el => { el.inert = true; });
   document.body.style.overflow = "hidden";
   modal.querySelector(".icon-btn").focus();
 }
 
-function closeModal() {
+function closeModal(restoreFocus = true) {
   modal.hidden = true;
   document.body.style.overflow = "";
-  if (modalOpener) { modalOpener.focus(); modalOpener = null; }
+  document.querySelectorAll(".appbar, .shell").forEach(el => { el.inert = false; });
+  if (restoreFocus && modalOpener && !modalOpener.closest("[hidden]")) modalOpener.focus();
+  modalOpener = null;
 }
 
 document.getElementById("cals").addEventListener("click", e => {
@@ -374,7 +429,25 @@ document.getElementById("cals").addEventListener("keydown", e => {
   if (cell) { e.preventDefault(); openDayModal(cell); }
 });
 modal.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+document.addEventListener("keydown", e => {
+  if (modal.hidden) return;
+  if (e.key === "Escape") { e.preventDefault(); closeModal(); return; }
+  if (e.key !== "Tab") return;
+  const controls = [...modal.querySelectorAll('button, a[href], [tabindex="0"]')]
+    .filter(el => !el.disabled && !el.closest("[hidden]"));
+  const first = controls[0], last = controls[controls.length - 1];
+  if (!first) return;
+  if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+    e.preventDefault(); last.focus();
+  } else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
+    e.preventDefault(); first.focus();
+  }
+});
+
+document.querySelector('.skip-link').addEventListener("click", e => {
+  e.preventDefault();
+  document.getElementById("main-content").focus();
+});
 
 /* ===== 초기화 ===== */
 renderDashboard();
@@ -388,9 +461,7 @@ document.getElementById("quiz-word").addEventListener("click", quizReveal);
 document.getElementById("quiz-next").addEventListener("click", quizNext);
 document.getElementById("vocab-search").addEventListener("input", e => renderVocab(e.target.value.trim()));
 document.getElementById("global-search").addEventListener("input", e => {
-  lessonQuery = e.target.value;
-  document.getElementById("lesson-search").value = lessonQuery;
+  setLessonSearch(e.target.value, true);
   if (lessonQuery && location.hash !== "#lessons") location.hash = "#lessons";
-  renderLessons();
 });
 route();
