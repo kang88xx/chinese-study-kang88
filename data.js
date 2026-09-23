@@ -1,8 +1,8 @@
 // 전화중국어 학습 데이터 — 중국교육센터 일일강사평 메일에서 수집
 // 현재 수강권: 2026-04-07 개강, 120회 (맛있는 비즈니스 중국어 LEVEL 4, 쟌슈위 강사)
 
-const PROGRESS = { done: 93, total: 120, pct: 78, start: "2026-04-07", end: "2026-10-27", updated: "2026-09-22",
-  att: 93, abs: 6, cancel: 6, pp: 15, rp: 1 };
+const PROGRESS = { done: 93, total: 120, pct: 78, start: "2026-04-07", end: "2026-10-27", updated: "2026-09-23",
+  att: 93, abs: 6, cancel: 6, pp: 16, rp: 1 };
 
 // 출석 달력 (공식 홈페이지 기준). blanks = 1일의 요일(일=0), att = {일: 누적회차},
 // abs = 결석, cancel = 휴강, pp = 일반연기, rp = 정규연기, start = 개강(수업시작)일
@@ -24,7 +24,7 @@ const CAL = [
     abs: [18,26], cancel: [17], pp: [10,14], rp: [20] },
   { name: "2026년 9월", key: "09", blanks: 2, days: 30,
     att: {1:79,2:80,3:81,4:82,8:83,9:84,10:85,11:86,14:87,15:88,16:89,17:90,18:91,21:92,22:93},
-    abs: [], cancel: [], pp: [7], rp: [] }
+    abs: [], cancel: [], pp: [7,23], rp: [] }
 ];
 
 // 수업 기록 (최신순). items: {zh, ko, py?, gr?} 또는 교정 {fix:{bad,good}, ko}
