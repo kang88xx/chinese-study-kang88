@@ -1,0 +1,6 @@
+# 에이전트·도구 작업 파일 (저장소와 배포에 넣지 않음)
+.omc/
+.gstack/
+# macOS 메타데이터 (AppleDouble ._*, Finder)
+._*
+.DS_Store

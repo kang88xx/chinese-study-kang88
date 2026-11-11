@@ -1,5 +1,20 @@
 /* 电话汉语 학습장 — 렌더링 & 인터랙션 */
-const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+/* ===== 공통: 진도 %, 월·날짜 표기 ===== */
+// 진도 %는 데이터에 저장하지 않고 누적 회차 / 전체 회차로 계산한다 (모든 화면이 같은 기준)
+const pct = n => Math.round(n * 100 / PROGRESS.total);
+// 달력이 두 해 이상에 걸치면 월 이름과 날짜에 연도를 붙여 2026-04 와 2027-04 가 섞이지 않게 한다
+const spansYears = () => new Set(CAL.map(m => m.key.slice(0, 4))).size > 1;
+const monthKey = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+const isTermStart = iso => TERMS.some(t => t.start === iso);
+function monthName(key) {
+  const [y, m] = key.split("-");
+  const label = spansYears() ? `${y}년 ${Number(m)}월` : `${Number(m)}월`;
+  return TERMS.some(t => t.start.startsWith(key + "-")) ? `${label} (개강)` : label;
+}
+const shortDate = iso => spansYears() ? iso : iso.slice(5);
 
 /* ===== 라우팅 (해시 탭) ===== */
 const TABS = ["home", "lessons", "vocab", "fix"];
@@ -25,15 +40,14 @@ function route(event) {
 window.addEventListener("hashchange", route);
 
 /* ===== 대시보드 ===== */
-const CURRENT_MONTH = PROGRESS.updated.slice(5, 7); // 최신 기록 월 (강조 표시)
+const CURRENT_MONTH = PROGRESS.updated.slice(0, 7); // 최신 기록 월 "YYYY-MM" (강조 표시)
 
 /* 날짜 스트립 — 오른쪽 끝이 최신 기록일, 가로 폭이 허용하는 만큼 과거로 채움 */
 const DOW_KO = ["일", "월", "화", "수", "목", "금", "토"];
 
 function dayStatus(date) {
-  const key = String(date.getMonth() + 1).padStart(2, "0");
   const d = date.getDate();
-  const mo = CAL.find(c => c.key === key);
+  const mo = CAL.find(c => c.key === monthKey(date));
   if (!mo) return "";
   if (mo.att[d] !== undefined) return "att";
   if (mo.abs.includes(d)) return "abs";
@@ -76,18 +90,20 @@ window.addEventListener("resize", () => {
 });
 
 function renderDashboard() {
-  document.getElementById("ab-progress").textContent = `${PROGRESS.done} / ${PROGRESS.total}회 · ${PROGRESS.pct}%`;
+  const donePct = pct(PROGRESS.done);
+  const term = TERMS[TERMS.length - 1]; // 현재 수강권
+  document.getElementById("ab-progress").textContent = `${PROGRESS.done} / ${PROGRESS.total}회 · ${donePct}%`;
   document.getElementById("ab-updated").textContent = `수강기간 ${PROGRESS.start} ~ ${PROGRESS.end}`;
   document.getElementById("footer-updated").textContent = "마지막 갱신: " + PROGRESS.updated;
   document.getElementById("course-note").textContent =
-    `휴강·연기로 조정된 수강 종료일은 ${PROGRESS.end}입니다. 결석은 출석 회차에 포함되지 않습니다.`;
+    `현재 수강권(${term.start} 시작)의 종료 예정일은 ${term.end}입니다. 휴강·연기하면 그만큼 뒤로 밀리고, 결석은 회차에 포함되지 않습니다.`;
 
   const fixCount = LESSONS.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const remain = PROGRESS.total - PROGRESS.done;
 
   // --- 진도 링 (SVG 도넛) + 벤토 타일 ---
   const R = 84, C = 2 * Math.PI * R;
-  const off = C * (1 - PROGRESS.pct / 100);
+  const off = C * (1 - donePct / 100);
   const ring = `
     <div class="bento-ring">
       <div class="ring">
@@ -98,7 +114,7 @@ function renderDashboard() {
             data-off="${off.toFixed(1)}" transform="rotate(-90 100 100)"></circle>
         </svg>
         <div class="ring-center">
-          <b>${PROGRESS.done}</b><span>/ ${PROGRESS.total}회</span><em>${PROGRESS.pct}%</em>
+          <b>${PROGRESS.done}</b><span>/ ${PROGRESS.total}회</span><em>${donePct}%</em>
         </div>
       </div>
       <div class="bento-ring-meta">
@@ -144,10 +160,12 @@ function renderDashboard() {
       else if (mo.cancel.includes(d)) { cls += " cancel"; state = "cancel"; title = "휴강"; }
       else if (mo.pp.includes(d)) { cls += " pp"; state = "pp"; title = "일반연기"; }
       else if (mo.rp.includes(d)) { cls += " rp"; state = "rp"; title = "정규연기"; }
-      const startMark = mo.start === d ? `<span class="start-badge">개강</span>` : "";
-      const t = title ? ` title="${mo.name} ${d}일 — ${title}"` : "";
+      // 개강 표시는 TERMS 의 모든 수강권 시작일 (첫 개강 2026-04-07, 재등록 2026-11-10 …)
+      const start = isTermStart(`${mo.key}-${String(d).padStart(2, "0")}`) ? " · 개강" : "";
+      const startMark = start ? `<span class="start-badge">개강</span>` : "";
+      const t = title ? ` title="${mo.name} ${d}일 — ${title}${start}"` : "";
       const data = state
-        ? ` role="button" tabindex="0" aria-label="${mo.name} ${d}일 · ${title}${mo.start === d ? " · 개강" : ""}" data-state="${state}" data-key="${mo.key}" data-day="${d}"` +
+        ? ` role="button" tabindex="0" aria-label="${mo.name} ${d}일 · ${title}${start}" data-state="${state}" data-key="${mo.key}" data-day="${d}"` +
           (state === "att" ? ` data-n="${mo.att[d]}"` : "")
         : "";
       cells += `<div class="${cls}"${t}${data}><span class="${dcls}">${d}</span>${startMark}</div>`;
@@ -168,28 +186,102 @@ function renderDashboard() {
 }
 
 /* ===== 수업 기록 ===== */
-const MONTH_NAMES = { "04": "4월 (개강)", "05": "5월", "06": "6월", "07": "7월", "08": "8월", "09": "9월" };
-const monthName = month => MONTH_NAMES[month] || `${Number(month)}월`;
-let lessonMonth = "all";
+let lessonMonth = "all"; // "all" 또는 CAL 키 "YYYY-MM"
 let lessonQuery = "";
 
+/* 검색 정규화 — 성조 부호(NFD 후 U+0300–U+036F)·대소문자·ü/v·공백·'·- 를 무시해
+   liugan, liu gan, LIUGAN 으로도 liúgǎn 을 찾는다. 한글 음절과 한자는 그대로 비교한다. */
+const FOLD_MEMO = new Map();
+function foldChar(ch) {
+  let f = FOLD_MEMO.get(ch);
+  if (f === undefined) {
+    f = ch.normalize("NFD").replace(/[\u0300-\u036f]/g, "").normalize("NFC")
+      .toLowerCase().replace(/v/g, "u").replace(/[\s'’-]/g, "");
+    FOLD_MEMO.set(ch, f);
+  }
+  return f;
+}
+// out = 정규화한 문자열, starts/ends[k] = out 의 k번째 글자가 원문에서 차지하는 [시작, 끝)
+function fold(text) {
+  let out = "", i = 0;
+  const starts = [], ends = [];
+  for (const ch of String(text)) {
+    const f = foldChar(ch), end = i + ch.length;
+    for (let k = 0; k < f.length; k++) { starts.push(i); ends.push(end); }
+    out += f;
+    if (!f && ends.length && /[\u0300-\u036f]/.test(ch)) ends[ends.length - 1] = end; // 떨어진 성조 부호는 앞 글자에 붙임
+    i = end;
+  }
+  return { out, starts, ends };
+}
+const FOLDED = new Map(); // 원문 → 정규화 문자열 (같은 문장을 검색할 때마다 다시 계산하지 않게)
+function folded(text) {
+  text = String(text);
+  let out = FOLDED.get(text);
+  if (out === undefined) FOLDED.set(text, out = fold(text).out);
+  return out;
+}
+const foldQuery = q => fold(String(q).normalize("NFC")).out;
+// 한두 글자 영문(예: AI)은 성조를 접으면 ài·zài·hái 같은 음절까지 걸려 결과가 크게 늘어나므로,
+// 예전처럼 글자 그대로(대소문자만 무시) 비교한다. 세 글자 이상부터 성조를 무시한다.
+const SHORT_LATIN = /^[a-z]{1,2}$/i;
+const literalQuery = q => (SHORT_LATIN.test(String(q).trim()) ? String(q).trim().toLowerCase() : null);
+
 function highlight(text, q) {
-  if (!q) return esc(text);
-  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  text = String(text);
+  const lit = q ? literalQuery(q) : null;
+  if (lit) {
+    const m = new RegExp(lit, "i").exec(text); // lit 은 영문 1~2자라 정규식 특수문자가 없다. 원문에서 직접 찾아 위치가 밀리지 않게 한다
+    if (!m) return esc(text);
+    const j = m.index, k = j + m[0].length;
+    return esc(text.slice(0, j)) + "<mark>" + esc(text.slice(j, k)) + "</mark>" + esc(text.slice(k));
+  }
+  const fq = q ? foldQuery(q) : "";
+  const i = fq ? folded(text).indexOf(fq) : -1;
   if (i < 0) return esc(text);
-  return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + q.length)) + "</mark>" + esc(text.slice(i + q.length));
+  const { starts, ends } = fold(text); // 일치한 문장만 원문 위치를 계산
+  const start = starts[i], end = ends[i + fq.length - 1];
+  return esc(text.slice(0, start)) + "<mark>" + esc(text.slice(start, end)) + "</mark>" + esc(text.slice(end));
+}
+
+const DATE_QUERY = /^\d{4}-\d{2}-\d{2}$/;
+const LESSON_HAY = new WeakMap(); // 수업별 정규화 검색 문자열 (한 번만 계산)
+function lessonHay(l) {
+  let hay = LESSON_HAY.get(l);
+  if (hay === undefined) {
+    hay = [l.date, l.theme, String(l.n), ...l.words, ...l.items.flatMap(i =>
+      [i.zh || "", i.ko || "", i.py || "", i.gr || "", i.fix ? i.fix.bad : "", i.fix ? i.fix.good : ""])]
+      .map(folded).join("\n"); // 줄바꿈은 정규화 검색어에 없으므로 항목 경계를 넘어 일치하지 않음
+    LESSON_HAY.set(l, hay);
+  }
+  return hay;
+}
+
+const LESSON_RAW = new WeakMap(); // 수업별 원문 검색 문자열 (소문자, 짧은 영문 검색용)
+function lessonRaw(l) {
+  let raw = LESSON_RAW.get(l);
+  if (raw === undefined) {
+    raw = [l.date, l.theme, String(l.n), ...l.words, ...l.items.flatMap(i =>
+      [i.zh || "", i.ko || "", i.py || "", i.gr || "", i.fix ? i.fix.bad : "", i.fix ? i.fix.good : ""])]
+      .join("\n").toLowerCase();
+    LESSON_RAW.set(l, raw);
+  }
+  return raw;
 }
 
 function lessonMatches(l, q) {
   if (!q) return true;
-  const hay = [l.date, l.theme, String(l.n), ...l.items.flatMap(i => [i.zh || "", i.ko || "", i.py || "", i.gr || "", i.fix ? i.fix.bad + i.fix.good : ""]), ...l.words];
-  return hay.some(s => s.toLowerCase().includes(q.toLowerCase()));
+  if (DATE_QUERY.test(q)) return l.date === q; // 날짜만 입력하면(달력 → 수업 기록) 그날 수업만
+  const lit = literalQuery(q);
+  if (lit) return lessonRaw(l).includes(lit);
+  const fq = foldQuery(q);
+  return !fq || lessonHay(l).includes(fq);
 }
 
 function renderLessons() {
   const q = lessonQuery.trim();
   const list = LESSONS.filter(l =>
-    (lessonMonth === "all" || l.date.slice(5, 7) === lessonMonth) && lessonMatches(l, q)
+    (lessonMonth === "all" || l.date.slice(0, 7) === lessonMonth) && lessonMatches(l, q)
   );
   document.getElementById("lesson-count").textContent =
     list.length ? `${list.length}개 수업` : "검색 결과가 없습니다";
@@ -225,7 +317,7 @@ function renderLessons() {
     const fixN = l.items.filter(i => i.fix).length;
     const badge = fixN ? `<span class="fix-badge">교정 ${fixN}</span>` : "";
     html += `<details class="lesson"${open}>
-      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${l.pct}%</span><span class="theme">${highlight(l.theme, q)}</span>${badge}</summary>
+      <summary><span class="date">${l.date.slice(5)} (${l.day})</span><span class="cnt">${l.n}회 · ${pct(l.n)}%</span><span class="theme">${highlight(l.theme, q)}</span>${badge}</summary>
       <div class="lbody">${items}${words}</div>
     </details>`;
   });
@@ -237,7 +329,7 @@ function renderLessons() {
 function renderSideStats() {
   const scope = lessonMonth === "all"
     ? LESSONS
-    : LESSONS.filter(l => l.date.slice(5, 7) === lessonMonth);
+    : LESSONS.filter(l => l.date.slice(0, 7) === lessonMonth);
   const lessons = scope.length;
   const fixes = scope.reduce((a, l) => a + l.items.filter(i => i.fix).length, 0);
   const words = scope.reduce((a, l) => a + l.words.length, 0);
@@ -273,7 +365,7 @@ function setupLessonControls() {
   });
   const months = ["all", ...CAL.map(m => m.key)];
   document.getElementById("month-chips").innerHTML = months.map(m =>
-    `<button data-m="${m}" aria-pressed="${m === "all"}" class="${m === "all" ? "active" : ""}">${m === "all" ? "전체" : monthName(m)}</button>`
+    `<button data-m="${m}" aria-pressed="${m === "all"}" class="${m === "all" ? "active" : ""}">${m === "all" ? "전체" : esc(monthName(m))}</button>`
   ).join("");
   document.getElementById("month-chips").addEventListener("click", e => {
     const b = e.target.closest("button");
@@ -289,16 +381,34 @@ function setupLessonControls() {
 
 /* ===== 단어장 ===== */
 function renderVocab(q = "") {
-  const list = VOCAB.filter(v => !q || v.some(s => s.toLowerCase().includes(q.toLowerCase())));
+  const lit = literalQuery(q);
+  const fq = lit ? "" : foldQuery(q);
+  const list = VOCAB.filter(v => lit ? v.some(s => String(s).toLowerCase().includes(lit))
+    : !fq || v.some(s => folded(s).includes(fq)));
   document.getElementById("vocab-count").textContent = `${list.length} / ${VOCAB.length}개`;
   document.getElementById("vocab-body").innerHTML = list.map(v =>
-    `<tr><td class="date">${esc(v[0])}</td><td class="zh" lang="zh-CN">${highlight(v[1], q)}</td><td class="py">${highlight(v[2], q)}</td><td>${highlight(v[3], q)}</td></tr>`
+    `<tr><td class="date">${esc(shortDate(v[0]))}</td><td class="zh" lang="zh-CN">${highlight(v[1], q)}</td><td class="py">${highlight(v[2], q)}</td><td>${highlight(v[3], q)}</td></tr>`
   ).join("") || `<tr><td colspan="4" class="vocab-empty"><p>일치하는 단어가 없습니다. 한자, 병음 또는 뜻으로 다시 검색해 보세요.</p><button class="btn btn-tonal" data-reset-vocab>검색 초기화</button></td></tr>`;
 }
 
-/* 플래시카드 */
+/* 플래시카드 — 섞은 순서대로 모든 단어를 한 번씩 낸 뒤 다시 섞는다 (비복원 추출) */
 document.getElementById("quiz-total").textContent = VOCAB.length;
 let quizIdx = -1;
+let quizDeck = []; // 이번 바퀴에 남은 단어 번호 (끝에서부터 꺼냄)
+function shuffleDeck() {
+  const deck = VOCAB.map((_, i) => i);
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  // 새 바퀴의 첫 단어가 직전 단어와 같으면 다른 자리와 바꿔 연속 출제를 막는다
+  const last = deck.length - 1;
+  if (last > 0 && deck[last] === quizIdx) {
+    const j = Math.floor(Math.random() * last);
+    [deck[j], deck[last]] = [deck[last], deck[j]];
+  }
+  return deck;
+}
 function quizNext() {
   if (!VOCAB.length) {
     document.getElementById("quiz-word").textContent = "등록된 단어가 없습니다";
@@ -306,8 +416,8 @@ function quizNext() {
     setQuizExpanded(false);
     return;
   }
-  let i;
-  do { i = Math.floor(Math.random() * VOCAB.length); } while (i === quizIdx && VOCAB.length > 1);
+  if (!quizDeck.length) quizDeck = shuffleDeck();
+  const i = quizDeck.pop();
   quizIdx = i;
   document.getElementById("quiz-word").textContent = VOCAB[i][1];
   const ans = document.getElementById("quiz-answer");
@@ -327,7 +437,7 @@ function quizReveal() {
   if (quizIdx < 0) return;
   const v = VOCAB[quizIdx];
   const ans = document.getElementById("quiz-answer");
-  ans.innerHTML = `<span class="py">${esc(v[2])}</span><span class="ko">${esc(v[3])}</span><span class="src">(${esc(v[0])} 수업)</span>`;
+  ans.innerHTML = `<span class="py">${esc(v[2])}</span><span class="ko">${esc(v[3])}</span><span class="src">(${esc(shortDate(v[0]))} 수업)</span>`;
   setQuizExpanded(ans.hidden);
 }
 
@@ -354,7 +464,7 @@ let modalOpener = null;
 function lessonItemsHtml(l) {
   const items = l.items.map(it => {
     let h = `<div class="sent">`;
-    if (it.gr) h += `<span class="gr">${esc(it.gr)}</span>`;
+    if (it.gr) h += `<span class="gr hanzi">${esc(it.gr)}</span>`;
     if (it.fix) h += `<span class="zh" lang="zh-CN"><span class="bad">${esc(it.fix.bad)}</span> → <span class="good">${esc(it.fix.good)}</span></span>`;
     else if (it.zh && it.zh !== "—") h += `<span class="zh" lang="zh-CN">${esc(it.zh)}</span>`;
     if (it.py) h += `<span class="py">${esc(it.py)}</span>`;
@@ -385,7 +495,7 @@ function openDayModal(cell) {
   const body = document.getElementById("modal-body");
   const link = document.getElementById("modal-link");
   if (lesson) {
-    body.innerHTML = `<p class="modal-meta">수업 기록일 ${lesson.date} (${lesson.day}) · 진도 ${lesson.pct}%</p>` + lessonItemsHtml(lesson);
+    body.innerHTML = `<p class="modal-meta">수업 기록일 ${lesson.date} (${lesson.day}) · 진도 ${pct(lesson.n)}%</p>` + lessonItemsHtml(lesson);
     link.hidden = false;
     link.onclick = () => {
       closeModal(false);

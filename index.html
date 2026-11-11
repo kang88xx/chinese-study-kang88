@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>电话汉语 학습장 — kang88</title>
 <meta name="description" content="전화중국어 수업 기록: 진도·출석 달력·수업별 어법·누적 단어장·교정 노트">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='26' fill='%230B57D0'/><text x='50' y='54' font-size='64' font-weight='700' fill='%23FFFFFF' text-anchor='middle' dominant-baseline='central' font-family='Noto Sans SC, Apple SD Gothic Neo, sans-serif'>汉</text></svg>">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='26' fill='%230B57D0'/><text x='50' y='54' font-size='64' font-weight='700' fill='%23FFFFFF' text-anchor='middle' dominant-baseline='central' font-family='Noto Sans SC, Apple SD Gothic Neo, sans-serif'>汉</text></svg>">
@@ -56,7 +57,7 @@
         <span class="banner-icon"><i class="mi" aria-hidden="true">verified_user</i></span>
         <div class="banner-text">
           <b>공식 출석부 기준으로 기록됩니다</b>
-          <span>중국교육센터 홈페이지 출석부를 그대로 옮겼습니다. 1회 = 2026-04-07 개강일이고, 출석 회차가 곧 진도예요. 2026-11-10 재등록분(120회)은 110회에 이어 111회부터 누적으로 셉니다.</span>
+          <span>중국교육센터 홈페이지 출석부를 옮겼습니다(10월 이후의 결석·휴강·연기는 아직 확인 전). 1회 = 2026-04-07 개강일이고, 출석 회차가 곧 진도예요. 2026-11-10 재등록분(120회)은 110회에 이어 111회부터 누적으로 셉니다.</span>
         </div>
         <a class="btn btn-quiet" href="#lessons">수업 기록 보기</a>
       </div>
@@ -82,7 +83,7 @@
     <section id="view-lessons" class="view" hidden>
       <div class="page-head">
         <h1 tabindex="-1">수업 기록</h1>
-        <p class="page-sub">강사평 메일에서 정리한 수업 내용입니다. 카드의 <b>수업 기록일</b>은 공식 출석일과 다를 수 있어요. 달력과 비교할 때는 <b>회차</b>를 확인해 주세요.</p>
+        <p class="page-sub">강사평 메일에서 정리한 수업 내용입니다. 카드의 <b>수업 기록일</b>은 공식 출석일과 다를 수 있어요. 달력과 비교할 때는 <b>회차</b>를 확인해 주세요. 병음은 성조 없이 입력해도 찾아요 (liugan → liúgǎn).</p>
       </div>
       <div class="lessons-layout">
         <aside class="lessons-side">
@@ -106,14 +107,14 @@
     <section id="view-vocab" class="view" hidden>
       <div class="page-head">
         <h1 tabindex="-1">단어장</h1>
-        <p class="page-sub">누적 <b id="quiz-total"></b>개 단어. 플래시카드로 먼저 떠올려 보고, 아래 표에서 찾아보세요.</p>
+        <p class="page-sub">누적 <b id="quiz-total"></b>개 단어. 플래시카드로 먼저 떠올려 보고, 아래 표에서 찾아보세요. 병음은 성조 없이 입력해도 찾아요.</p>
       </div>
 
       <div class="quiz-card" id="quiz">
         <div class="quiz-side">
           <span class="chip chip-tonal">플래시카드</span>
           <h2 class="quiz-title">한자를 보고 뜻을 떠올려 보세요</h2>
-          <p class="quiz-desc">무작위로 출제됩니다. 카드를 누르면 병음과 뜻이 나옵니다.</p>
+          <p class="quiz-desc">무작위 순서로 모든 단어를 한 번씩 낸 뒤 다시 섞습니다. 카드를 누르면 병음과 뜻이 나옵니다.</p>
           <div class="quiz-actions">
             <button id="quiz-reveal" class="btn btn-filled" aria-controls="quiz-answer" aria-expanded="false">뜻 보기</button>
             <button id="quiz-next" class="btn btn-tonal">다음 단어</button>

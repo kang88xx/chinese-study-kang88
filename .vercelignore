@@ -1,0 +1,9 @@
+# 배포에서 빼는 파일 — 사이트에 필요한 것은 index.html, styles.css, app.js, data.js 뿐
+.omc
+.gstack
+._*
+.DS_Store
+.gitignore
+tests/
+QA_REPORT.md
+README.md

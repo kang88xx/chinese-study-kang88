@@ -5,12 +5,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '../data.js'), 'utf8');
-const { PROGRESS, CAL, LESSONS, VOCAB } = vm.runInNewContext(
-  `${source}\n;({ PROGRESS, CAL, LESSONS, VOCAB });`
+const { PROGRESS, TERMS, CAL, LESSONS, VOCAB } = vm.runInNewContext(
+  `${source}\n;({ PROGRESS, TERMS, CAL, LESSONS, VOCAB });`
 );
 const statuses = ['abs', 'cancel', 'pp', 'rp'];
-const year = PROGRESS.start.slice(0, 4);
-const calendarDate = (month, day) => `${year}-${month.key}-${String(day).padStart(2, '0')}`;
+const calendarDate = (month, day) => `${month.key}-${String(day).padStart(2, '0')}`;
+// 공식 출석일과 누적 회차, 날짜순
+const attendanceDays = () => CAL
+  .flatMap(month => Object.entries(month.att).map(([day, n]) => ({ date: calendarDate(month, Number(day)), n })))
+  .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
 function date(value, label) {
   assert.match(value, /^\d{4}-\d{2}-\d{2}$/, label);
@@ -30,13 +33,16 @@ function integer(value, minimum, maximum, label) {
     `${label}: expected integer ${minimum}..${maximum}, got ${value}`);
 }
 
-test('course progress has valid dates, bounded counts and a rounded completion percentage', () => {
+test('course progress has valid dates and bounded counts that match the terms', () => {
   for (const key of ['start', 'end', 'updated']) date(PROGRESS[key], `PROGRESS.${key}`);
   assert.ok(PROGRESS.start <= PROGRESS.updated, 'update must not precede the course');
   assert.ok(PROGRESS.start <= PROGRESS.end, 'end must not precede start');
   integer(PROGRESS.total, 1, Number.MAX_SAFE_INTEGER, 'PROGRESS.total');
   integer(PROGRESS.done, 0, PROGRESS.total, 'PROGRESS.done');
-  assert.equal(PROGRESS.pct, Math.round(PROGRESS.done * 100 / PROGRESS.total));
+  // 화면이 Math.round(n * 100 / total) 로 계산하므로 PROGRESS 에 pct 를 저장하지 않는다
+  assert.ok(!('pct' in PROGRESS), 'PROGRESS.pct is computed on screen; do not store it');
+  assert.equal(PROGRESS.start, TERMS[0].start, 'course start must be the first term start');
+  assert.equal(PROGRESS.end, TERMS[TERMS.length - 1].end, 'course end must be the current term end');
 });
 
 test('progress attendance and status totals agree with the calendar', () => {
@@ -51,21 +57,54 @@ test('progress attendance and status totals agree with the calendar', () => {
   }
 });
 
-test('calendar month lengths and leading blanks place days on the correct weekdays', () => {
-  const keys = new Set();
+test('calendar months are unique YYYY-MM keys in order with names, blanks and lengths of their own year', () => {
+  let previous = '';
   for (const month of CAL) {
-    assert.match(month.key, /^(0[1-9]|1[0-2])$/, 'calendar month key');
-    assert.ok(!keys.has(month.key), `duplicate calendar month ${month.key}`);
-    keys.add(month.key);
-    const first = date(calendarDate(month, 1), `${month.key} first day`);
-    assert.equal(month.name, `${year}년 ${Number(month.key)}월`);
-    assert.equal(month.blanks, first.getUTCDay(), `${month.key} leading blanks`);
-    assert.equal(month.days, new Date(Date.UTC(Number(year), Number(month.key), 0)).getUTCDate(),
-      `${month.key} day count`);
-    if (month.start !== undefined) {
-      integer(month.start, 1, month.days, `${month.key} start marker`);
-      assert.equal(calendarDate(month, month.start), PROGRESS.start, 'course start marker');
-    }
+    assert.match(month.key, /^\d{4}-(0[1-9]|1[0-2])$/, `calendar month key ${month.key}`);
+    assert.ok(month.key > previous, `${month.key}: calendar months must be unique and in ascending order`);
+    previous = month.key;
+    const [year, mon] = month.key.split('-').map(Number);
+    assert.equal(month.name, `${year}년 ${mon}월`, `${month.key} name`);
+    assert.equal(month.blanks, new Date(Date.UTC(year, mon - 1, 1)).getUTCDay(), `${month.key} leading blanks`);
+    assert.equal(month.days, new Date(Date.UTC(year, mon, 0)).getUTCDate(), `${month.key} day count`);
+  }
+  assert.ok(CAL[0].key <= PROGRESS.start.slice(0, 7), 'calendar must begin by the course start month');
+  assert.ok(CAL[CAL.length - 1].key >= PROGRESS.updated.slice(0, 7), 'calendar must reach the latest update month');
+});
+
+test('calendar start markers are exactly the term starts', () => {
+  const markers = [];
+  for (const month of CAL) {
+    if (month.start === undefined) continue;
+    integer(month.start, 1, month.days, `${month.key} start marker`);
+    markers.push(calendarDate(month, month.start));
+  }
+  const starts = TERMS.map(term => term.start);
+  for (const marker of markers) assert.ok(starts.includes(marker), `${marker}: start marker without a TERMS entry`);
+  const first = CAL[0].key, last = CAL[CAL.length - 1].key;
+  for (const start of starts) {
+    if (start.slice(0, 7) < first || start.slice(0, 7) > last) continue;
+    assert.ok(markers.includes(start), `${start}: TERMS start without a calendar start marker`);
+  }
+});
+
+test('terms are ordered and each first number continues the cumulative attendance count', () => {
+  assert.ok(Array.isArray(TERMS) && TERMS.length > 0, 'TERMS must list at least one term');
+  const days = attendanceDays();
+  days.forEach((day, i) => assert.equal(day.n, i + 1, `${day.date}: attendance numbers must count 1, 2, 3 … in date order`));
+  TERMS.forEach((term, i) => {
+    const label = `TERMS[${i}]`;
+    date(term.start, `${label}.start`);
+    date(term.end, `${label}.end`);
+    assert.ok(term.start <= term.end, `${label}: end must not precede start`);
+    integer(term.first, 1, PROGRESS.total, `${label}.first`);
+    if (i > 0) assert.ok(TERMS[i - 1].end < term.start, `${label}: terms must be in order and must not overlap`);
+    assert.equal(term.first, 1 + days.filter(day => day.date < term.start).length,
+      `${label}.first must be 1 + lessons attended before ${term.start}`);
+  });
+  for (const day of days) {
+    assert.ok(TERMS.some(term => term.start <= day.date && day.date <= term.end),
+      `${day.date}: attendance outside every term (extend TERMS end after a postponement?)`);
   }
 });
 
@@ -104,6 +143,15 @@ test('attendance and lesson numbers are unique and join in both directions', () 
     'every attendance number must have exactly one lesson record');
 });
 
+test('no lesson is recorded before the attendance day with the same number', () => {
+  const attended = new Map(attendanceDays().map(day => [day.n, day.date]));
+  for (const lesson of LESSONS) {
+    const day = attended.get(lesson.n);
+    assert.ok(day, `lesson ${lesson.n}: no attendance day`);
+    assert.ok(lesson.date >= day, `lesson ${lesson.n}: recorded ${lesson.date} before its attendance day ${day}`);
+  }
+});
+
 test('lesson dates match their weekday and do not exceed the latest update', () => {
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
   let previous = PROGRESS.updated;
@@ -117,12 +165,12 @@ test('lesson dates match their weekday and do not exceed the latest update', () 
   }
 });
 
-test('lesson records provide renderable sentence or correction items and word arrays', () => {
+test('lesson records provide renderable items, headword-first words and no stored percentage', () => {
   assert.ok(Array.isArray(LESSONS) && LESSONS.length > 0, 'lessons must be a nonempty array');
   for (const lesson of LESSONS) {
     const label = `lesson ${lesson.n}`;
     text(lesson.theme, `${label} theme`);
-    integer(lesson.pct, 0, 100, `${label} percentage`);
+    assert.ok(!('pct' in lesson), `${label}: pct is computed on screen, do not store it`);
     assert.ok(Array.isArray(lesson.items) && lesson.items.length > 0, `${label} items`);
     for (const [i, item] of lesson.items.entries()) {
       const itemLabel = `${label} item ${i + 1}`;
@@ -139,21 +187,26 @@ test('lesson records provide renderable sentence or correction items and word ar
       }
     }
     assert.ok(Array.isArray(lesson.words), `${label} words`);
-    lesson.words.forEach((word, i) => text(word, `${label} word ${i + 1}`));
+    lesson.words.forEach((word, i) => {
+      text(word, `${label} word ${i + 1}`);
+      // 화면은 첫 공백 앞을 굵은 표제어로 보여 준다 → 한자 표제어로 시작해야 한다 ("[10/29] 决心 …" 은 안 됨)
+      assert.match(word, /^[\u3400-\u9fff]/, `${label} word ${i + 1} must start with its Chinese headword: ${word}`);
+    });
   }
 });
 
-test('vocabulary rows contain four text fields and valid source dates through the latest update', () => {
+test('vocabulary rows have four text fields and full dates within the recorded period, newest first', () => {
   assert.ok(Array.isArray(VOCAB), 'vocabulary must be an array');
+  let previous = PROGRESS.updated;
   for (const [i, row] of VOCAB.entries()) {
     const label = `vocabulary row ${i + 1}`;
     assert.ok(Array.isArray(row), label);
     assert.equal(row.length, 4, `${label}: date, Chinese, pinyin, meaning`);
     row.forEach((value, j) => text(value, `${label} field ${j + 1}`));
-    assert.match(row[0], /^\d{2}-\d{2}$/, `${label} date format`);
-    const recorded = `${year}-${row[0]}`;
-    date(recorded, label);
-    assert.ok(recorded >= PROGRESS.start && recorded <= PROGRESS.updated,
-      `${label}: source date outside recorded course period`);
+    date(row[0], `${label} date (YYYY-MM-DD)`);
+    assert.ok(row[0] >= PROGRESS.start && row[0] <= PROGRESS.updated,
+      `${label}: ${row[0]} outside the recorded course period`);
+    assert.ok(row[0] <= previous, `${label}: rows must be newest first`);
+    previous = row[0];
   }
 });
